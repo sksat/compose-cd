@@ -1,0 +1,128 @@
+#!/bin/bash
+
+source config.env
+
+function docker-compose(){
+	local p=`pwd`
+	echo "[compose-mock]:$p $1 $2"
+}
+
+function install(){
+	echo install
+}
+
+function uninstall(){
+	echo uninstall
+}
+
+function notify_discord(){
+	local webhook=$1
+	local msg="$2"
+	curl -H "Accept: application/json" -H "Content-type: application/json" -X POST \
+			-d '{"username":"kuso","content":'"\"$msg\"}" $webhook
+}
+
+function notify(){
+	local msg="[${project}] $1"
+	echo "$msg"
+	notify_discord ${DISCORD_WEBHOOK} "$msg"
+}
+
+function load_config(){
+	source ./.compose-cd # super config system
+}
+
+function service_up(){
+	docker-compose up -d
+	notify "service is up!"
+}
+
+function service_down(){
+	docker-compose down
+	notify "service is down"
+}
+
+function check_repo(){
+	echo check repo
+}
+
+function get_remote_image(){
+	local registry=$1
+	local image=$2
+	local tag=$3
+
+	curl --silent \
+		--header "accept: application/vnd.docker.distribution.manifest.v2+json" \
+		--header "authorization: bearer" \
+		"https://${registry}/v2/${image}/manifests/${tag}" \
+		| jq -r '.config.digest'
+}
+
+function update_repo(){
+	echo "update repo"
+	local branch=`git symbolic-ref --short head`
+	local local_commit=`git rev-parse head`
+	local remote_commit=`git ls-remote origin ${branch} | awk '{print $1}'`
+
+	if [[ $local_commit = $remote_commit ]]; then
+		# no update
+		return
+	fi
+
+	echo "local:  ${local_commit}"
+	echo "remote: ${remote_commit}"
+	echo "pulling repository..."
+	git pull origin $branch
+}
+
+function update_image(){
+	local img_location="${REGISTRY}/${IMAGE}"   # like ghcr.io/sksat/kuso-subdomain-adder
+	local img_tag="${VERSION}"
+
+	local local_img=`docker images --no-trunc --digests ${img_location} --format '{{.Tag}} {{.ID}}' | grep $img_tag`
+	local remote_img=`get_remote_image ${registry} ${image} ${img_tag}`
+
+	if [[ $local_img = $remote_img ]]; then
+		# no update
+		return
+	fi
+
+	docker-compose pull
+}
+
+function project_update(){
+	local proj=$1
+	echo "update project: $proj"
+	(
+		project=$proj
+		cd $proj
+		load_config
+
+		#update_repo
+		update_image
+
+		# todo: no update
+		# todo: running check
+		service_down
+		service_up
+
+		echo $repo
+	)
+}
+
+function foreach_project(){
+	# TODO: default root
+	local SEARCH_ROOT=.
+
+	local cfgs=`find ${SEARCH_ROOT} -maxdepth 5 -type f -name '.compose-cd'`
+	for c in $cfgs; do
+		local p=`dirname $c`
+		eval "$1 $p"
+	done
+}
+
+function update(){
+	foreach_project project_update
+}
+
+update
