@@ -19,13 +19,13 @@ function notify_discord(){
 	local webhook=$1
 	local msg="$2"
 	curl -H "Accept: application/json" -H "Content-type: application/json" -X POST \
-			-d '{"username":"kuso","content":'"\"$msg\"}" $webhook
+			-d '{"username":"kuso","content":'"\"$msg\"}" "$webhook"
 }
 
 function notify(){
 	local msg="[${project}] $1"
 	echo "$msg"
-	notify_discord ${DISCORD_WEBHOOK} "$msg"
+	notify_discord "${DISCORD_WEBHOOK}" "$msg"
 }
 
 function load_config(){
@@ -68,9 +68,9 @@ function get_remote_image(){
 function update_repo(){
 	echo -n "[$project:update repository] "
 
-	local branch=`git symbolic-ref --short HEAD`
-	local local_commit=`git rev-parse HEAD`
-	local remote_commit=`git ls-remote origin ${branch} | awk '{print $1}'`
+	local branch=$(git symbolic-ref --short HEAD)
+	local local_commit=$(git rev-parse HEAD)
+	local remote_commit=$(git ls-remote origin ${branch} | awk '{print $1}')
 
 	if [[ $local_commit = $remote_commit ]]; then
 		# no update
@@ -80,7 +80,7 @@ function update_repo(){
 
 	echo "local(${local_commit}) -> remote(${remote_commit})"
 	echo "pulling repository..."
-	git pull origin $branch
+	git pull origin "$branch"
 }
 
 function update_image(){
@@ -89,8 +89,8 @@ function update_image(){
 	local img_location="${REGISTRY}/${IMAGE}"   # like ghcr.io/sksat/kuso-subdomain-adder
 	local img_tag="${VERSION}"
 
-	local local_img=`docker images --no-trunc --digests ${img_location} --format '{{.Tag}} {{.ID}}' | grep $img_tag`
-	local remote_img=`get_remote_image ${registry} ${image} ${img_tag}`
+	local local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
+	local remote_img=$(get_remote_image "${REGISTRY}" "${IMAGE}" "${img_tag}")
 
 	if [[ $local_img = $remote_img ]]; then
 		# no update
@@ -123,7 +123,7 @@ function project_status(){
 	local proj=$1
 
 	echo -n "[$proj:status] "
-	local services=`docker-compose ps -q`
+	local services=$(docker-compose ps -q)
 	if [ -n "$services" ]; then
 		echo "up"
 	else
@@ -135,14 +135,14 @@ function foreach_project(){
 	# TODO: default root
 	local SEARCH_ROOT=.
 
-	local cfgs=`find ${SEARCH_ROOT} -maxdepth 5 -type f -name '.compose-cd'`
+	local cfgs=$(find ${SEARCH_ROOT} -maxdepth 5 -type f -name '.compose-cd')
 	for c in $cfgs; do
-		local proj=`dirname $c`
+		local proj=$(dirname "$c")
 		project=$proj
 
 		# execute in subshell
 		(
-			cd $proj
+			cd "$proj"
 			eval "$1 $proj"
 		)
 	done
