@@ -2,10 +2,10 @@
 
 source config.env
 
-function docker-compose(){
-	local p=`pwd`
-	echo "[compose-mock]:$p $1 $2"
-}
+#function docker-compose(){
+#	local p=`pwd`
+#	echo "[compose-mock]:$p $1 $2"
+#}
 
 function install(){
 	echo install
@@ -29,16 +29,23 @@ function notify(){
 }
 
 function load_config(){
+	echo -n "[$proj:load config] "
+	if [ ! -e ./.compose-cd ]; then
+		echo "config file not found"
+		return
+	fi
 	source ./.compose-cd # super config system
+	echo "ok"
 }
 
 function service_up(){
-	docker-compose up -d
+	notify "starting service..."
+	docker-compose up -d 2> /dev/null
 	notify "service is up!"
 }
 
 function service_down(){
-	docker-compose down
+	docker-compose down 2> /dev/null
 	notify "service is down"
 }
 
@@ -59,23 +66,26 @@ function get_remote_image(){
 }
 
 function update_repo(){
-	echo "update repo"
-	local branch=`git symbolic-ref --short head`
-	local local_commit=`git rev-parse head`
+	echo -n "[$project:update repository] "
+
+	local branch=`git symbolic-ref --short HEAD`
+	local local_commit=`git rev-parse HEAD`
 	local remote_commit=`git ls-remote origin ${branch} | awk '{print $1}'`
 
 	if [[ $local_commit = $remote_commit ]]; then
 		# no update
+		echo "pass"
 		return
 	fi
 
-	echo "local:  ${local_commit}"
-	echo "remote: ${remote_commit}"
+	echo "local(${local_commit}) -> remote(${remote_commit})"
 	echo "pulling repository..."
 	git pull origin $branch
 }
 
 function update_image(){
+	echo -n "[$project:update image] "
+
 	local img_location="${REGISTRY}/${IMAGE}"   # like ghcr.io/sksat/kuso-subdomain-adder
 	local img_tag="${VERSION}"
 
@@ -84,30 +94,41 @@ function update_image(){
 
 	if [[ $local_img = $remote_img ]]; then
 		# no update
+		echo "pass"
 		return
 	fi
 
+	echo "start"
 	docker-compose pull
+	echo "[$project:update image] done"
 }
 
 function project_update(){
 	local proj=$1
-	echo "update project: $proj"
-	(
-		project=$proj
-		cd $proj
-		load_config
 
-		#update_repo
-		update_image
+	load_config
 
-		# todo: no update
-		# todo: running check
-		service_down
-		service_up
+	update_repo
+	update_image
 
-		echo $repo
-	)
+	# todo: no update
+	# todo: running check
+
+	echo "restart service..."
+	service_down
+	service_up
+}
+
+function project_status(){
+	local proj=$1
+
+	echo -n "[$proj:status] "
+	local services=`docker-compose ps -q`
+	if [ -n "$services" ]; then
+		echo "up"
+	else
+		echo "down"
+	fi
 }
 
 function foreach_project(){
@@ -116,13 +137,32 @@ function foreach_project(){
 
 	local cfgs=`find ${SEARCH_ROOT} -maxdepth 5 -type f -name '.compose-cd'`
 	for c in $cfgs; do
-		local p=`dirname $c`
-		eval "$1 $p"
+		local proj=`dirname $c`
+		project=$proj
+
+		# execute in subshell
+		(
+			cd $proj
+			eval "$1 $proj"
+		)
 	done
+}
+
+function check_status(){
+	echo "check status"
+	foreach_project project_status
 }
 
 function update(){
 	foreach_project project_update
 }
 
+check_status
 update
+
+case $1 in
+	"install") install ;;
+	"uninstall") uninstall ;;
+	"status") check_status ;;
+	"update") update ;;
+esac
