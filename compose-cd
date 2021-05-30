@@ -201,7 +201,7 @@ function foreach_project(){
 
 	# execute in subshell
 	(
-		cd ${search_root} || { echo "error: SEARCH_ROOT(${search_root}) not found"; exit 1; }
+		cd "${search_root}" || { echo "error: SEARCH_ROOT(${search_root}) not found"; exit 1; }
 		cfgs=$(find . -maxdepth 5 -type f -name '.compose-cd')
 		for c in $cfgs; do
 			local proj
@@ -230,8 +230,8 @@ function install(){
 	echo "install"
 	cp ./compose-cd /usr/bin/compose-cd
 
-	read -p "search root> " SEARCH_ROOT
-	read -p "Discord webhook URL> " DISCORD_WEBHOOK
+	read -rp "search root> " SEARCH_ROOT
+	read -rp "Discord webhook URL> " DISCORD_WEBHOOK
 
 	mkdir /etc/compose-cd
 	echo -e "SEARCH_ROOT=\"${SEARCH_ROOT}\"\n\nDISCORD_WEBHOOK=\"${DISCORD_WEBHOOK}\"" | tee /etc/compose-cd/config
