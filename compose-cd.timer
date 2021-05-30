@@ -1,0 +1,9 @@
+[Unit]
+Description=Continuous Deployment for docker-compose
+
+[Timer]
+OnUnitActiveSec=1min
+Unit=compose-cd.service
+
+[Install]
+WantedBy=default.target

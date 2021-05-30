@@ -1,0 +1,292 @@
+#!/bin/bash
+
+#function docker-compose(){
+#	local p=`pwd`
+#	echo "[compose-mock]:$p $1 $2"
+#}
+
+function version(){
+	local ver
+
+	ver="0.1.0"
+	echo "version: ${ver}"
+}
+
+function usage(){
+	echo "usage> compose-cd [COMMAND]"
+	echo "commands:"
+	echo "  help        show this usage"
+	echo "  install     install compose-cd"
+	echo "  uninstall   uninstall compose-cd"
+	echo "  status      check status"
+	echo "  update      update projects"
+}
+
+function notify_discord(){
+	local webhook
+	local msg
+
+	webhook=$1
+	msg="$2"
+	curl -H "Accept: application/json" -H "Content-type: application/json" -X POST \
+			-d '{"username":"compose-cd","content":'"\"$msg\"}" "$webhook"
+}
+
+function notify(){
+	local msg
+
+	if [ -z ${2+x} ]; then
+		msg="[${project}] $1"
+	else
+		msg="$2$1"
+	fi
+
+	echo "$msg"
+	notify_discord "${DISCORD_WEBHOOK}" "$msg"
+}
+
+function notify_test(){
+	notify "test"
+}
+
+function load_global_config(){
+	if [ ! -e "/etc/compose-cd/config" ]; then
+		echo "/etc/compose-cd/config not found"
+		exit 1
+	fi
+	source /etc/compose-cd/config
+}
+
+function load_config(){
+	echo -n "[$proj:load config] "
+	if [ ! -e ./.compose-cd ]; then
+		echo "config file not found"
+		return
+	fi
+	source ./.compose-cd # super config system
+	echo "ok"
+}
+
+function service_up(){
+	notify "starting service..."
+	docker-compose up -d 2> /dev/null
+	notify "service is up!"
+}
+
+function service_down(){
+	docker-compose down 2> /dev/null
+	notify "service is down"
+}
+
+function check_repo(){
+	echo check repo
+}
+
+function get_remote_image(){
+	local registry
+	local image
+	local tag
+
+	registry=$1
+	image=$2
+	tag=$3
+
+	echo -n "${tag} "
+	curl --silent \
+		--header "accept: application/vnd.docker.distribution.manifest.v2+json" \
+		--header "authorization: bearer" \
+		"https://${registry}/v2/${image}/manifests/${tag}" \
+		| jq -r '.config.digest'
+}
+
+function update_repo(){
+	local branch
+	local local_commit
+	local remote_commit
+
+	echo -n "[$project:update repository] "
+
+	branch=$(git symbolic-ref --short HEAD)
+	local_commit=$(git rev-parse HEAD)
+	remote_commit=$(git ls-remote origin "${branch}" | awk '{print $1}')
+
+	if [[ $local_commit = "$remote_commit" ]]; then
+		# no update
+		echo "pass"
+		return 1
+	fi
+
+	echo "pull start"
+	notify "local(${local_commit}) -> remote(${remote_commit})"
+	git pull origin "$branch"
+}
+
+function update_image(){
+	local img_location
+	local img_tag
+	local local_img
+	local remote_img
+
+	echo -n "[$project:update image] "
+
+	if [ -z ${REGISTRY+x} ]; then echo "error: REGISTRY is unset"; return; fi
+	if [ -z ${IMAGE+x} ]; then echo "error: REGISTRY is unset"; return; fi
+	img_location="${REGISTRY}/${IMAGE}"   # like ghcr.io/sksat/kuso-subdomain-adder
+
+	if [ -z ${VERSION+x} ]; then
+		echo "warning: VERSION is unset"
+		img_tag="main"
+
+		echo -n "[$project:update image] "
+	else
+		img_tag="${VERSION}"
+	fi
+
+	local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
+	remote_img=$(get_remote_image "${REGISTRY}" "${IMAGE}" "${img_tag}")
+
+	if [[ $remote_img = "null" ]]; then
+		notify "error: remote image is null!" ""
+		echo "registry: ${REGISTRY}"
+		echo "image: ${IMAGE}"
+		echo "tag: ${img_tag}"
+		return 2
+	fi
+
+	if [[ $local_img = "$remote_img" ]]; then
+		# no update
+		echo "pass"
+		return 1
+	fi
+
+	echo "pull start"
+	notify "update image: ${local_img} ===> ${remote_img}"
+	docker-compose pull
+	echo "[$project:update image] done"
+}
+
+function project_update(){
+	local proj=$1
+	local rr
+	local ri
+
+	load_config
+
+	update_repo; rr=$?
+	update_image; ri=$?
+
+	# no update
+	if [ $rr = 1 ] && [ $ri = 1 ]; then
+		echo "no update"
+		return
+	fi
+
+	# error
+	if [ $rr = 2 ] || [ $ri = 2 ]; then
+		return
+	fi
+
+	# todo: running check
+
+	echo "restart service..."
+	service_down
+	service_up
+}
+
+function project_status(){
+	local proj
+	local services
+
+	proj=$1
+
+	echo -n "[$proj:status] "
+	services=$(docker-compose ps -q)
+
+	if [ -n "$services" ]; then
+		echo "up"
+	else
+		echo "down"
+	fi
+}
+
+function foreach_project(){
+	local search_root
+	local cfgs
+
+	if [ -z ${SEARCH_ROOT+x} ]; then echo "error: SEARCH_ROOT is unset"; return; fi
+	search_root=${SEARCH_ROOT}
+
+	# execute in subshell
+	(
+		cd "${search_root}" || { echo "error: SEARCH_ROOT(${search_root}) not found"; exit 1; }
+		cfgs=$(find . -maxdepth 5 -type f -name '.compose-cd')
+		for c in $cfgs; do
+			local proj
+			proj=$(dirname "$c")
+			project=$proj   # global
+
+			(
+				cd "$proj" || { echo "[$proj] error: project not fouund"; exit 1; }
+				eval "$1 $proj"
+			)
+		done
+	)
+}
+
+function install(){
+	echo "install"
+
+	read -rp "search root> " SEARCH_ROOT
+	read -rp "Discord webhook URL> " DISCORD_WEBHOOK
+
+	mkdir /etc/compose-cd
+	echo -e "SEARCH_ROOT=\"${SEARCH_ROOT}\"\n\nDISCORD_WEBHOOK=\"${DISCORD_WEBHOOK}\"" | tee /etc/compose-cd/config
+
+	load_global_config
+	notify "notify test" "[test] "
+
+	cp ./compose-cd /usr/bin/compose-cd
+	cp ./compose-cd.service /etc/systemd/system/
+	cp ./compose-cd.timer /etc/systemd/system/
+
+	systemctl daemon-reload
+	systemctl enable --now compose-cd.service
+	systemctl enable --now compose-cd.timer
+}
+
+function uninstall(){
+	echo "uninstall"
+
+	rm /usr/bin/compose-cd
+	rm -r /etc/compose-cd
+
+	systemctl stop compose-cd.timer
+	systemctl stop compose-cd.service
+	rm /etc/systemd/system/compose-cd.timer
+	rm /etc/systemd/system/compose-cd.service
+	systemctl daemon-reload
+}
+
+function check_status(){
+	echo "check status"
+
+	load_global_config
+	foreach_project project_status
+}
+
+function update(){
+	echo "update"
+
+	load_global_config
+	foreach_project project_update
+}
+
+case $1 in
+	"help") usage ;;
+	"version") version ;;
+	"notify-test") notify "test" ;;
+	"install") install ;;
+	"uninstall") uninstall ;;
+	"status") check_status ;;
+	"update") update ;;
+esac
