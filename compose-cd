@@ -103,8 +103,19 @@ function update_image(){
 
 	echo -n "[$project:update image] "
 
+	if [ -z ${REGISTRY+x} ]; then echo "error: REGISTRY is unset"; return; fi
+	if [ -z ${IMAGE+x} ]; then echo "error: REGISTRY is unset"; return; fi
 	img_location="${REGISTRY}/${IMAGE}"   # like ghcr.io/sksat/kuso-subdomain-adder
-	img_tag="${VERSION}"
+
+	if [ -z ${VERSION+x} ]; then
+		echo "warning: VERSION is unset"
+		img_tag="main"
+
+		echo -n "[$project:update image] "
+	else
+		img_tag="${VERSION}"
+	fi
+
 
 	local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
 	remote_img=$(get_remote_image "${REGISTRY}" "${IMAGE}" "${img_tag}")
