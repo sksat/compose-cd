@@ -27,7 +27,13 @@ function notify_discord(){
 
 function notify(){
 	local msg
-	msg="[${project}] $1"
+
+	if [ -z ${2+x} ]; then
+		msg="[${project}] $1"
+	else
+		msg="$2$1"
+	fi
+
 	echo "$msg"
 	notify_discord "${DISCORD_WEBHOOK}" "$msg"
 }
@@ -66,6 +72,7 @@ function get_remote_image(){
 	image=$2
 	tag=$3
 
+	echo -n "${tag} "
 	curl --silent \
 		--header "accept: application/vnd.docker.distribution.manifest.v2+json" \
 		--header "authorization: bearer" \
@@ -87,7 +94,7 @@ function update_repo(){
 	if [[ $local_commit = "$remote_commit" ]]; then
 		# no update
 		echo "pass"
-		return
+		return 1
 	fi
 
 	echo "local(${local_commit}) -> remote(${remote_commit})"
@@ -116,30 +123,49 @@ function update_image(){
 		img_tag="${VERSION}"
 	fi
 
-
 	local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
 	remote_img=$(get_remote_image "${REGISTRY}" "${IMAGE}" "${img_tag}")
+
+	if [[ $remote_img = "null" ]]; then
+		notify "error: remote image is null!" ""
+		echo "registry: ${REGISTRY}"
+		echo "image: ${IMAGE}"
+		echo "tag: ${img_tag}"
+		return 2
+	fi
 
 	if [[ $local_img = "$remote_img" ]]; then
 		# no update
 		echo "pass"
-		return
+		return 1
 	fi
 
-	echo "start"
+	echo "start: ${local_img} ===> ${remote_img}"
 	docker-compose pull
 	echo "[$project:update image] done"
 }
 
 function project_update(){
 	local proj=$1
+	local rr
+	local ri
 
 	load_config
 
-	update_repo
-	update_image
+	update_repo; rr=$?
+	update_image; ri=$?
 
-	# todo: no update
+	# no update
+	if [ $rr = 1 -a $ri = 1 ]; then
+		notify "no update"
+		return
+	fi
+
+	# error
+	if [ $rr = 2 -o $ri = 2 ]; then
+		return
+	fi
+
 	# todo: running check
 
 	echo "restart service..."
