@@ -16,14 +16,18 @@ function uninstall(){
 }
 
 function notify_discord(){
-	local webhook=$1
-	local msg="$2"
+	local webhook
+	local msg
+
+	webhook=$1
+	msg="$2"
 	curl -H "Accept: application/json" -H "Content-type: application/json" -X POST \
 			-d '{"username":"kuso","content":'"\"$msg\"}" "$webhook"
 }
 
 function notify(){
-	local msg="[${project}] $1"
+	local msg
+	msg="[${project}] $1"
 	echo "$msg"
 	notify_discord "${DISCORD_WEBHOOK}" "$msg"
 }
@@ -54,9 +58,13 @@ function check_repo(){
 }
 
 function get_remote_image(){
-	local registry=$1
-	local image=$2
-	local tag=$3
+	local registry
+	local image
+	local tag
+
+	registry=$1
+	image=$2
+	tag=$3
 
 	curl --silent \
 		--header "accept: application/vnd.docker.distribution.manifest.v2+json" \
@@ -66,13 +74,17 @@ function get_remote_image(){
 }
 
 function update_repo(){
+	local branch
+	local local_commit
+	local remote_commit
+
 	echo -n "[$project:update repository] "
 
-	local branch=$(git symbolic-ref --short HEAD)
-	local local_commit=$(git rev-parse HEAD)
-	local remote_commit=$(git ls-remote origin ${branch} | awk '{print $1}')
+	branch=$(git symbolic-ref --short HEAD)
+	local_commit=$(git rev-parse HEAD)
+	remote_commit=$(git ls-remote origin "${branch}" | awk '{print $1}')
 
-	if [[ $local_commit = $remote_commit ]]; then
+	if [[ $local_commit = "$remote_commit" ]]; then
 		# no update
 		echo "pass"
 		return
@@ -84,15 +96,20 @@ function update_repo(){
 }
 
 function update_image(){
+	local img_location
+	local img_tag
+	local local_img
+	local remote_img
+
 	echo -n "[$project:update image] "
 
-	local img_location="${REGISTRY}/${IMAGE}"   # like ghcr.io/sksat/kuso-subdomain-adder
-	local img_tag="${VERSION}"
+	img_location="${REGISTRY}/${IMAGE}"   # like ghcr.io/sksat/kuso-subdomain-adder
+	img_tag="${VERSION}"
 
-	local local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
-	local remote_img=$(get_remote_image "${REGISTRY}" "${IMAGE}" "${img_tag}")
+	local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
+	remote_img=$(get_remote_image "${REGISTRY}" "${IMAGE}" "${img_tag}")
 
-	if [[ $local_img = $remote_img ]]; then
+	if [[ $local_img = "$remote_img" ]]; then
 		# no update
 		echo "pass"
 		return
@@ -120,10 +137,14 @@ function project_update(){
 }
 
 function project_status(){
-	local proj=$1
+	local proj
+	local services
+
+	proj=$1
 
 	echo -n "[$proj:status] "
-	local services=$(docker-compose ps -q)
+	services=$(docker-compose ps -q)
+
 	if [ -n "$services" ]; then
 		echo "up"
 	else
@@ -132,17 +153,21 @@ function project_status(){
 }
 
 function foreach_project(){
-	# TODO: default root
-	local SEARCH_ROOT=.
+	local search_root
+	local cfgs
 
-	local cfgs=$(find ${SEARCH_ROOT} -maxdepth 5 -type f -name '.compose-cd')
+	# TODO: default root
+	search_root=.
+
+	cfgs=$(find ${search_root} -maxdepth 5 -type f -name '.compose-cd')
 	for c in $cfgs; do
-		local proj=$(dirname "$c")
-		project=$proj
+		local proj
+		proj=$(dirname "$c")
+		project=$proj   # global
 
 		# execute in subshell
 		(
-			cd "$proj"
+			cd "$proj" || { echo "[$proj] error: project not fouund"; exit 1; }
 			eval "$1 $proj"
 		)
 	done
