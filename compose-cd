@@ -5,6 +5,23 @@
 #	echo "[compose-mock]:$p $1 $2"
 #}
 
+function version(){
+	local ver
+
+	ver="0.1.0"
+	echo "version: ${ver}"
+}
+
+function usage(){
+	echo "usage> compose-cd [COMMAND]"
+	echo "commands:"
+	echo "  help        show this usage"
+	echo "  install     install compose-cd"
+	echo "  uninstall   uninstall compose-cd"
+	echo "  status      check status"
+	echo "  update      update projects"
+}
+
 function notify_discord(){
 	local webhook
 	local msg
@@ -216,19 +233,8 @@ function foreach_project(){
 	)
 }
 
-function usage(){
-	echo "usage> compose-cd [COMMAND]"
-	echo "commands:"
-	echo "  help        show this usage"
-	echo "  install     install compose-cd"
-	echo "  uninstall   uninstall compose-cd"
-	echo "  status      check status"
-	echo "  update      update projects"
-}
-
 function install(){
 	echo "install"
-	cp ./compose-cd /usr/bin/compose-cd
 
 	read -rp "search root> " SEARCH_ROOT
 	read -rp "Discord webhook URL> " DISCORD_WEBHOOK
@@ -238,12 +244,27 @@ function install(){
 
 	load_global_config
 	notify "notify test" "[test] "
+
+	cp ./compose-cd /usr/bin/compose-cd
+	cp ./compose-cd.service /etc/systemd/system/
+	cp ./compose-cd.timer /etc/systemd/system/
+
+	systemctl daemon-reload
+	systemctl enable --now compose-cd.service
+	systemctl enable --now compose-cd.timer
 }
 
 function uninstall(){
 	echo "uninstall"
+
 	rm /usr/bin/compose-cd
 	rm -r /etc/compose-cd
+
+	systemctl stop compose-cd.timer
+	systemctl stop compose-cd.service
+	rm /etc/systemd/system/compose-cd.timer
+	rm /etc/systemd/system/compose-cd.service
+	systemctl daemon-reload
 }
 
 function check_status(){
@@ -262,6 +283,7 @@ function update(){
 
 case $1 in
 	"help") usage ;;
+	"version") version ;;
 	"notify-test") notify "test" ;;
 	"install") install ;;
 	"uninstall") uninstall ;;
