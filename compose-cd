@@ -1,19 +1,9 @@
 #!/bin/bash
 
-source config.env
-
 #function docker-compose(){
 #	local p=`pwd`
 #	echo "[compose-mock]:$p $1 $2"
 #}
-
-function install(){
-	echo install
-}
-
-function uninstall(){
-	echo uninstall
-}
 
 function notify_discord(){
 	local webhook
@@ -22,7 +12,7 @@ function notify_discord(){
 	webhook=$1
 	msg="$2"
 	curl -H "Accept: application/json" -H "Content-type: application/json" -X POST \
-			-d '{"username":"kuso","content":'"\"$msg\"}" "$webhook"
+			-d '{"username":"compose-cd","content":'"\"$msg\"}" "$webhook"
 }
 
 function notify(){
@@ -36,6 +26,18 @@ function notify(){
 
 	echo "$msg"
 	notify_discord "${DISCORD_WEBHOOK}" "$msg"
+}
+
+function notify_test(){
+	notify "test"
+}
+
+function load_global_config(){
+	if [ ! -e "/etc/compose-cd/config" ]; then
+		echo "/etc/compose-cd/config not found"
+		exit 1
+	fi
+	source /etc/compose-cd/config
 }
 
 function load_config(){
@@ -97,8 +99,8 @@ function update_repo(){
 		return 1
 	fi
 
-	echo "local(${local_commit}) -> remote(${remote_commit})"
-	echo "pulling repository..."
+	echo "pull start"
+	notify "local(${local_commit}) -> remote(${remote_commit})"
 	git pull origin "$branch"
 }
 
@@ -140,7 +142,8 @@ function update_image(){
 		return 1
 	fi
 
-	echo "start: ${local_img} ===> ${remote_img}"
+	echo "pull start"
+	notify "update image: ${local_img} ===> ${remote_img}"
 	docker-compose pull
 	echo "[$project:update image] done"
 }
@@ -156,13 +159,13 @@ function project_update(){
 	update_image; ri=$?
 
 	# no update
-	if [ $rr = 1 -a $ri = 1 ]; then
-		notify "no update"
+	if [ $rr = 1 ] && [ $ri = 1 ]; then
+		echo "no update"
 		return
 	fi
 
 	# error
-	if [ $rr = 2 -o $ri = 2 ]; then
+	if [ $rr = 2 ] || [ $ri = 2 ]; then
 		return
 	fi
 
@@ -193,36 +196,73 @@ function foreach_project(){
 	local search_root
 	local cfgs
 
-	# TODO: default root
-	search_root=.
+	if [ -z ${SEARCH_ROOT+x} ]; then echo "error: SEARCH_ROOT is unset"; return; fi
+	search_root=${SEARCH_ROOT}
 
-	cfgs=$(find ${search_root} -maxdepth 5 -type f -name '.compose-cd')
-	for c in $cfgs; do
-		local proj
-		proj=$(dirname "$c")
-		project=$proj   # global
+	# execute in subshell
+	(
+		cd ${search_root} || { echo "error: SEARCH_ROOT(${search_root}) not found"; exit 1; }
+		cfgs=$(find . -maxdepth 5 -type f -name '.compose-cd')
+		for c in $cfgs; do
+			local proj
+			proj=$(dirname "$c")
+			project=$proj   # global
 
-		# execute in subshell
-		(
-			cd "$proj" || { echo "[$proj] error: project not fouund"; exit 1; }
-			eval "$1 $proj"
-		)
-	done
+			(
+				cd "$proj" || { echo "[$proj] error: project not fouund"; exit 1; }
+				eval "$1 $proj"
+			)
+		done
+	)
+}
+
+function usage(){
+	echo "usage> compose-cd [COMMAND]"
+	echo "commands:"
+	echo "  help        show this usage"
+	echo "  install     install compose-cd"
+	echo "  uninstall   uninstall compose-cd"
+	echo "  status      check status"
+	echo "  update      update projects"
+}
+
+function install(){
+	echo "install"
+	cp ./compose-cd /usr/bin/compose-cd
+
+	read -p "search root> " SEARCH_ROOT
+	read -p "Discord webhook URL> " DISCORD_WEBHOOK
+
+	mkdir /etc/compose-cd
+	echo -e "SEARCH_ROOT=\"${SEARCH_ROOT}\"\n\nDISCORD_WEBHOOK=\"${DISCORD_WEBHOOK}\"" | tee /etc/compose-cd/config
+
+	load_global_config
+	notify "notify test" "[test] "
+}
+
+function uninstall(){
+	echo "uninstall"
+	rm /usr/bin/compose-cd
+	rm -r /etc/compose-cd
 }
 
 function check_status(){
 	echo "check status"
+
+	load_global_config
 	foreach_project project_status
 }
 
 function update(){
+	echo "update"
+
+	load_global_config
 	foreach_project project_update
 }
 
-check_status
-update
-
 case $1 in
+	"help") usage ;;
+	"notify-test") notify "test" ;;
 	"install") install ;;
 	"uninstall") uninstall ;;
 	"status") check_status ;;
