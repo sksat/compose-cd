@@ -8,7 +8,7 @@
 function version(){
 	local ver
 
-	ver="0.1.0"
+	ver="0.1.1"
 	echo "version: ${ver}"
 }
 
@@ -109,6 +109,12 @@ function update_repo(){
 	branch=$(git symbolic-ref --short HEAD)
 	local_commit=$(git rev-parse HEAD)
 	remote_commit=$(git ls-remote origin "${branch}" | awk '{print $1}')
+
+	if [ -z "$remote_commit" ]; then
+		notify "error: could not get remote commit"
+		echo "branch: ${branch}"
+		return 2
+	fi
 
 	if [[ $local_commit = "$remote_commit" ]]; then
 		# no update
