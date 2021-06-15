@@ -64,6 +64,7 @@ function load_config(){
 		return
 	fi
 	source ./.compose-cd # super config system
+	if [ -z ${UPDATE_IMAGE_ONLY+x} ]; then UPDATE_IMAGE_ONLY=false; fi
 	echo "ok"
 }
 
@@ -178,7 +179,10 @@ function project_update(){
 
 	load_config
 
-	update_repo; rr=$?
+	rr=1
+	if ! $UPDATE_IMAGE_ONLY ; then
+		update_repo; rr=$?
+	fi
 	update_image; ri=$?
 
 	# no update
