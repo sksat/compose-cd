@@ -133,6 +133,7 @@ function update_image(){
 	local img_tag
 	local local_img
 	local remote_img
+	local remote_img_id
 
 	echo -n "[$project:update image] "
 
@@ -151,8 +152,10 @@ function update_image(){
 
 	local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
 	remote_img=$(get_remote_image "${REGISTRY}" "${IMAGE}" "${img_tag}")
+	remote_img_id=$(cut -d' ' -f 2 <<<"${remote_img}")
 
-	if [[ $remote_img = "null" ]]; then
+	echo "remote_img_id: ${remote_img_id}"
+	if [ "$remote_img" = "null" ] || [ "$remote_img_id" = "" ]; then
 		notify "error: remote image is null!" ""
 		echo "registry: ${REGISTRY}"
 		echo "image: ${IMAGE}"
