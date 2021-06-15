@@ -8,7 +8,7 @@
 function version(){
 	local ver
 
-	ver="0.1.1"
+	ver="0.1.2"
 	echo "version: ${ver}"
 }
 
@@ -137,12 +137,12 @@ function update_image(){
 
 	echo -n "[$project:update image] "
 
-	if [ -z ${REGISTRY+x} ]; then echo "error: REGISTRY is unset"; return; fi
-	if [ -z ${IMAGE+x} ]; then echo "error: REGISTRY is unset"; return; fi
+	if [ -z ${REGISTRY+x} ]; then echo "error: REGISTRY is not set"; return; fi
+	if [ -z ${IMAGE+x} ]; then echo "error: REGISTRY is not set"; return; fi
 	img_location="${REGISTRY}/${IMAGE}"   # like ghcr.io/sksat/kuso-subdomain-adder
 
 	if [ -z ${VERSION+x} ]; then
-		echo "warning: VERSION is unset"
+		echo "warning: VERSION is not set"
 		img_tag="main"
 
 		echo -n "[$project:update image] "
@@ -226,7 +226,7 @@ function foreach_project(){
 	local search_root
 	local cfgs
 
-	if [ -z ${SEARCH_ROOT+x} ]; then echo "error: SEARCH_ROOT is unset"; return; fi
+	if [ -z ${SEARCH_ROOT+x} ]; then echo "error: SEARCH_ROOT is not set"; return; fi
 	search_root=${SEARCH_ROOT}
 
 	# execute in subshell
