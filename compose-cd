@@ -8,7 +8,7 @@
 function version(){
 	local ver
 
-	ver="0.1.1"
+	ver="0.1.2"
 	echo "version: ${ver}"
 }
 
@@ -64,6 +64,7 @@ function load_config(){
 		return
 	fi
 	source ./.compose-cd # super config system
+	if [ -z ${UPDATE_IMAGE_ONLY+x} ]; then UPDATE_IMAGE_ONLY=false; fi
 	echo "ok"
 }
 
@@ -124,7 +125,7 @@ function update_repo(){
 
 	echo "pull start"
 	notify "local(${local_commit}) -> remote(${remote_commit})"
-	git pull origin "$branch"
+	sudo -u "$GIT_PULL_USER" git pull origin "$branch"
 }
 
 function update_image(){
@@ -132,15 +133,16 @@ function update_image(){
 	local img_tag
 	local local_img
 	local remote_img
+	local remote_img_id
 
 	echo -n "[$project:update image] "
 
-	if [ -z ${REGISTRY+x} ]; then echo "error: REGISTRY is unset"; return; fi
-	if [ -z ${IMAGE+x} ]; then echo "error: REGISTRY is unset"; return; fi
+	if [ -z ${REGISTRY+x} ]; then echo "error: REGISTRY is not set"; return; fi
+	if [ -z ${IMAGE+x} ]; then echo "error: REGISTRY is not set"; return; fi
 	img_location="${REGISTRY}/${IMAGE}"   # like ghcr.io/sksat/kuso-subdomain-adder
 
 	if [ -z ${VERSION+x} ]; then
-		echo "warning: VERSION is unset"
+		echo "warning: VERSION is not set"
 		img_tag="main"
 
 		echo -n "[$project:update image] "
@@ -150,8 +152,10 @@ function update_image(){
 
 	local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
 	remote_img=$(get_remote_image "${REGISTRY}" "${IMAGE}" "${img_tag}")
+	remote_img_id=$(cut -d' ' -f 2 <<<"${remote_img}")
 
-	if [[ $remote_img = "null" ]]; then
+	echo "remote_img_id: ${remote_img_id}"
+	if [ "$remote_img" = "null" ] || [ "$remote_img_id" = "" ]; then
 		notify "error: remote image is null!" ""
 		echo "registry: ${REGISTRY}"
 		echo "image: ${IMAGE}"
@@ -178,7 +182,10 @@ function project_update(){
 
 	load_config
 
-	update_repo; rr=$?
+	rr=1
+	if ! $UPDATE_IMAGE_ONLY ; then
+		update_repo; rr=$?
+	fi
 	update_image; ri=$?
 
 	# no update
@@ -219,7 +226,7 @@ function foreach_project(){
 	local search_root
 	local cfgs
 
-	if [ -z ${SEARCH_ROOT+x} ]; then echo "error: SEARCH_ROOT is unset"; return; fi
+	if [ -z ${SEARCH_ROOT+x} ]; then echo "error: SEARCH_ROOT is not set"; return; fi
 	search_root=${SEARCH_ROOT}
 
 	# execute in subshell
@@ -243,10 +250,11 @@ function install(){
 	echo "install"
 
 	read -rp "search root> " SEARCH_ROOT
+	read -rp "git pull user> " GIT_PULL_USER
 	read -rp "Discord webhook URL> " DISCORD_WEBHOOK
 
 	mkdir /etc/compose-cd
-	echo -e "SEARCH_ROOT=\"${SEARCH_ROOT}\"\n\nDISCORD_WEBHOOK=\"${DISCORD_WEBHOOK}\"" | tee /etc/compose-cd/config
+	echo -e "SEARCH_ROOT=\"${SEARCH_ROOT}\"\n\nGIT_PULL_USER=\"${GIT_PULL_USER}\"\n\nDISCORD_WEBHOOK=\"${DISCORD_WEBHOOK}\"" | tee /etc/compose-cd/config
 
 	load_global_config
 	notify "notify test" "[test] "
