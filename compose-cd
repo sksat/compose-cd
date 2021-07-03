@@ -28,7 +28,7 @@ function notify_discord(){
 
 	webhook=$1
 	msg="$2"
-	curl -H "Accept: application/json" -H "Content-type: application/json" -X POST \
+	curl --silent -H "Accept: application/json" -H "Content-type: application/json" -X POST \
 			-d '{"username":"compose-cd","content":'"\"$msg\"}" "$webhook"
 }
 
