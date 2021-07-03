@@ -20,8 +20,8 @@ function check_multi_registry(){
 
 	if [ "$ghcr" != "$dockerhub" ]; then
 		echo "error"
-		echo "\tghcr.io: ${ghcr}"
-		echo "\tDockerHub: ${dockerhub}"
+		echo -e "\tghcr.io: ${ghcr}"
+		echo -e "\tDockerHub: ${dockerhub}"
 		exit 1
 	fi
 
@@ -31,3 +31,4 @@ function check_multi_registry(){
 check_multi_registry "sksat/archbot-rs" "main"
 check_multi_registry "sksat/mc.yohane.su" "main"
 check_multi_registry "sksat/papermc-docker" "main"
+check_multi_registry "sksat/kuso-subdomain-adder" "master"
