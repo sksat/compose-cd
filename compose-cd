@@ -161,13 +161,13 @@ function update_image(){
 	if [ -z ${IMAGE+x} ]; then echo "error: REGISTRY is not set"; return; fi
 	img_location="${REGISTRY}/${IMAGE}"   # like ghcr.io/sksat/kuso-subdomain-adder
 
-	if [ -z ${VERSION+x} ]; then
-		echo "warning: VERSION is not set"
+	if [ -z ${IMG_TAG+x} ]; then
+		echo "warning: IMG_TAG is not set"
 		img_tag="main"
 
 		echo -n "[$project:update image] "
 	else
-		img_tag="${VERSION}"
+		img_tag="${IMG_TAG}"
 	fi
 
 	local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
