@@ -175,7 +175,7 @@ function update_image(){
 	remote_img_id=$(cut -d' ' -f 2 <<<"${remote_img}")
 
 	echo "remote_img_id: ${remote_img_id}"
-	if [ "$(echo "${remote_img}" | grep 'null')" ] || [ "$remote_img_id" = "" ]; then
+	if echo "${remote_img}" | grep -q 'null' || [ "$remote_img_id" = "" ]; then
 		notify "error: remote image is null!" ""
 		echo "registry: ${REGISTRY}"
 		echo "image: ${IMAGE}"
