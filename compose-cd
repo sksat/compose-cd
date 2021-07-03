@@ -89,6 +89,7 @@ function get_remote_image(){
 	local image
 	local tag
 	local registry_token
+	local manifest
 
 	registry=$1
 	image=$2
@@ -113,11 +114,17 @@ function get_remote_image(){
 	#echo $registry_token
 
 	echo -n "${tag} "
-	curl --silent \
+	manifest=$(curl --silent \
 		--header "Accept: application/vnd.docker.distribution.manifest.v2+json" \
 		--header "Authorization: Bearer ${registry_token}" \
-		"https://${registry}/v2/${image}/manifests/${tag}" \
-		| jq -r '.config.digest'
+		"https://${registry}/v2/${image}/manifests/${tag}")
+
+	if echo "${manifest}" | grep 'errors'; then
+		echo ${manifest} 1>&2
+		exit 1
+	fi
+
+	echo ${manifest} | jq -r '.config.digest'
 }
 
 function update_repo(){
