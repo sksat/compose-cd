@@ -85,18 +85,38 @@ function check_repo(){
 
 function get_remote_image(){
 	local registry
+	local registry_auth
 	local image
 	local tag
+	local registry_token
 
 	registry=$1
 	image=$2
 	tag=$3
 
+	if [ ${registry} = "hub.docker.com" ]; then
+		registry="registry-1.docker.io"
+		registry_auth="auth.docker.io"
+	else
+		registry_auth=${registry}
+	fi
+
+	#registry_auth="ghcr.io"
+	#registry_auth="auth.docker.io"
+
+	#echo ${registry_auth}
+
+	registry_token=$(curl --silent \
+		"https://${registry_auth}/token?scope=repository:${image}:pull&service=registry.docker.io" \
+		| jq -r '.token')
+
+	#echo $registry_token
+
 	echo -n "${tag} "
 	curl --silent \
-		--header "accept: application/vnd.docker.distribution.manifest.v2+json" \
-		--header "authorization: bearer" \
-		"https://${registry}/v2/${image}/manifests/${tag}" \
+		--header "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+		--header "Authorization: Bearer ${registry_token}" \
+		"https://${registry}/v2/${image}/manifests/main" \
 		| jq -r '.config.digest'
 }
 
