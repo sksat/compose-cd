@@ -234,7 +234,7 @@ function project_update(){
 	fi
 
 	# before script
-	if [ ! -z ${before_script} ]; then
+	if [ -n "${before_script}" ]; then
 		bash -c "${before_script}"
 	fi
 
@@ -245,7 +245,7 @@ function project_update(){
 	service_up
 
 	# after script
-	if [ ! -z ${after_script} ]; then
+	if [ -n "${after_script}" ]; then
 		bash -c "${after_script}"
 	fi
 }
