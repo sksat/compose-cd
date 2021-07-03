@@ -200,6 +200,9 @@ function project_update(){
 	local rr
 	local ri
 
+	local before_script
+	local after_script
+
 	load_config
 
 	rr=1
@@ -219,11 +222,32 @@ function project_update(){
 		return
 	fi
 
+	if [ -z ${BEFORE_RESTART+x} ]; then
+		before_script=""
+	else
+		before_script=${BEFORE_RESTART}
+	fi
+	if [ -z ${AFTER_RESTART+x} ]; then
+		after_script=""
+	else
+		after_script=${AFTER_RESTART}
+	fi
+
+	# before script
+	if [ ! -z ${before_script} ]; then
+		bash -c "${before_script}"
+	fi
+
 	# todo: running check
 
 	echo "restart service..."
 	service_down
 	service_up
+
+	# after script
+	if [ ! -z ${after_script} ]; then
+		bash -c "${after_script}"
+	fi
 }
 
 function project_status(){
