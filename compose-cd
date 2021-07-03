@@ -116,7 +116,7 @@ function get_remote_image(){
 	curl --silent \
 		--header "Accept: application/vnd.docker.distribution.manifest.v2+json" \
 		--header "Authorization: Bearer ${registry_token}" \
-		"https://${registry}/v2/${image}/manifests/main" \
+		"https://${registry}/v2/${image}/manifests/${tag}" \
 		| jq -r '.config.digest'
 }
 
