@@ -94,7 +94,7 @@ function get_remote_image(){
 	image=$2
 	tag=$3
 
-	if [ ${registry} = "hub.docker.com" ]; then
+	if [ "${registry}" = "hub.docker.com" ]; then
 		registry="registry-1.docker.io"
 		registry_auth="auth.docker.io"
 	else
