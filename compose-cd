@@ -8,7 +8,7 @@
 function version(){
 	local ver
 
-	ver="0.1.2"
+	ver="0.2.0"
 	echo "version: ${ver}"
 }
 
@@ -28,7 +28,7 @@ function notify_discord(){
 
 	webhook=$1
 	msg="$2"
-	curl -H "Accept: application/json" -H "Content-type: application/json" -X POST \
+	curl --silent -H "Accept: application/json" -H "Content-type: application/json" -X POST \
 			-d '{"username":"compose-cd","content":'"\"$msg\"}" "$webhook"
 }
 
@@ -85,19 +85,46 @@ function check_repo(){
 
 function get_remote_image(){
 	local registry
+	local registry_auth
 	local image
 	local tag
+	local registry_token
+	local manifest
 
 	registry=$1
 	image=$2
 	tag=$3
 
+	if [ "${registry}" = "hub.docker.com" ]; then
+		registry="registry-1.docker.io"
+		registry_auth="auth.docker.io"
+	else
+		registry_auth=${registry}
+	fi
+
+	#registry_auth="ghcr.io"
+	#registry_auth="auth.docker.io"
+
+	#echo ${registry_auth}
+
+	registry_token=$(curl --silent \
+		"https://${registry_auth}/token?scope=repository:${image}:pull&service=registry.docker.io" \
+		| jq -r '.token')
+
+	#echo $registry_token
+
 	echo -n "${tag} "
-	curl --silent \
-		--header "accept: application/vnd.docker.distribution.manifest.v2+json" \
-		--header "authorization: bearer" \
-		"https://${registry}/v2/${image}/manifests/${tag}" \
-		| jq -r '.config.digest'
+	manifest=$(curl --silent \
+		--header "Accept: application/vnd.docker.distribution.manifest.v2+json" \
+		--header "Authorization: Bearer ${registry_token}" \
+		"https://${registry}/v2/${image}/manifests/${tag}")
+
+	if echo "${manifest}" | grep 'errors'; then
+		echo "${manifest}" 1>&2
+		exit 1
+	fi
+
+	echo "${manifest}" | jq -r '.config.digest'
 }
 
 function update_repo(){
@@ -141,13 +168,13 @@ function update_image(){
 	if [ -z ${IMAGE+x} ]; then echo "error: REGISTRY is not set"; return; fi
 	img_location="${REGISTRY}/${IMAGE}"   # like ghcr.io/sksat/kuso-subdomain-adder
 
-	if [ -z ${VERSION+x} ]; then
-		echo "warning: VERSION is not set"
+	if [ -z ${IMG_TAG+x} ]; then
+		echo "warning: IMG_TAG is not set"
 		img_tag="main"
 
 		echo -n "[$project:update image] "
 	else
-		img_tag="${VERSION}"
+		img_tag="${IMG_TAG}"
 	fi
 
 	local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
@@ -155,7 +182,7 @@ function update_image(){
 	remote_img_id=$(cut -d' ' -f 2 <<<"${remote_img}")
 
 	echo "remote_img_id: ${remote_img_id}"
-	if [ "$remote_img" = "null" ] || [ "$remote_img_id" = "" ]; then
+	if echo "${remote_img}" | grep -q 'null' || [ "$remote_img_id" = "" ]; then
 		notify "error: remote image is null!" ""
 		echo "registry: ${REGISTRY}"
 		echo "image: ${IMAGE}"
@@ -180,6 +207,9 @@ function project_update(){
 	local rr
 	local ri
 
+	local before_script
+	local after_script
+
 	load_config
 
 	rr=1
@@ -199,11 +229,32 @@ function project_update(){
 		return
 	fi
 
+	if [ -z ${BEFORE_RESTART+x} ]; then
+		before_script=""
+	else
+		before_script=${BEFORE_RESTART}
+	fi
+	if [ -z ${AFTER_RESTART+x} ]; then
+		after_script=""
+	else
+		after_script=${AFTER_RESTART}
+	fi
+
+	# before script
+	if [ -n "${before_script}" ]; then
+		bash -c "${before_script}"
+	fi
+
 	# todo: running check
 
 	echo "restart service..."
 	service_down
 	service_up
+
+	# after script
+	if [ -n "${after_script}" ]; then
+		bash -c "${after_script}"
+	fi
 }
 
 function project_status(){
