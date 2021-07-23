@@ -64,7 +64,14 @@ function load_config(){
 		return
 	fi
 	source ./.compose-cd # super config system
+	if [ -z ${UPDATE_REPO_ONLY+x} ]; then UPDATE_REPO_ONLY=false; fi
 	if [ -z ${UPDATE_IMAGE_ONLY+x} ]; then UPDATE_IMAGE_ONLY=false; fi
+
+	if "$UPDATE_REPO_ONLY" && "$UPDATE_IMAGE_ONLY"; then
+		echo "UPDATE_REPO_ONLY and UPDATE_IMAGE_ONLY are true. This is something wrong."
+		exit 1
+	fi
+
 	echo "ok"
 }
 
@@ -213,10 +220,13 @@ function project_update(){
 	load_config
 
 	rr=1
+	ri=1
 	if ! $UPDATE_IMAGE_ONLY ; then
 		update_repo; rr=$?
 	fi
-	update_image; ri=$?
+	if ! "$UPDATE_REPO_ONLY"; then
+		update_image; ri=$?
+	fi
 
 	# no update
 	if [ $rr = 1 ] && [ $ri = 1 ]; then
