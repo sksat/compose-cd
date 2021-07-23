@@ -196,6 +196,12 @@ function update_image(){
 	fi
 
 	local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
+	if [ "$local_img" = "" ]; then
+		notify "error: local image is null!" ""
+		docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}'
+		return 2
+	fi
+
 	remote_img=$(get_remote_image "${REGISTRY}" "${IMAGE}" "${img_tag}")
 	remote_img_id=$(cut -d' ' -f 2 <<<"${remote_img}")
 
