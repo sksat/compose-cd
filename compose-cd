@@ -69,6 +69,8 @@ function load_config(){
 
 	if [ -z ${UPDATE_IMAGE_BY_REPO+x} ]; then UPDATE_IMAGE_BY_REPO=false; fi
 
+	if [ -z ${PRIVATE_IMAGE+x} ]; then PRIVATE_IMAGE=false; fi
+
 	if "$UPDATE_REPO_ONLY" && "$UPDATE_IMAGE_ONLY"; then
 		echo "UPDATE_REPO_ONLY and UPDATE_IMAGE_ONLY are true. This is something wrong."
 		exit 1
@@ -120,10 +122,19 @@ function get_remote_image(){
 
 	#echo ${registry_auth}
 
-	registry_token=$(curl --silent \
-		-u "${DOCKER_USERNAME}:${DOCKER_PASSWORD}" \
-		"https://${registry_auth}/token?scope=repository:${image}:pull&service=registry.docker.io" \
-		| jq -r '.token')
+	if ${PRIVATE_IMAGE}; then
+		#echo "private image"
+		registry_token=$(curl --silent \
+			-u "${DOCKER_USERNAME}:${DOCKER_PASSWORD}" \
+			"https://${registry_auth}/token?scope=repository:${image}:pull&service=registry.docker.io" \
+			| jq -r '.token')
+	else
+		#echo "public image"
+		registry_token=$(curl --silent \
+			"https://${registry_auth}/token?scope=repository:${image}:pull&service=registry.docker.io" \
+			| jq -r '.token')
+	fi
+
 
 	#echo $registry_token
 
