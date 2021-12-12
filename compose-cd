@@ -121,6 +121,7 @@ function get_remote_image(){
 	#echo ${registry_auth}
 
 	registry_token=$(curl --silent \
+		-u "${DOCKER_USERNAME}:${DOCKER_PASSWORD}" \
 		"https://${registry_auth}/token?scope=repository:${image}:pull&service=registry.docker.io" \
 		| jq -r '.token')
 
