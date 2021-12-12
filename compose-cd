@@ -113,8 +113,10 @@ function get_remote_image(){
 	if [ "${registry}" = "hub.docker.com" ]; then
 		registry="registry-1.docker.io"
 		registry_auth="auth.docker.io"
+		registry_srv="registry.docker.io"
 	else
 		registry_auth=${registry}
+		registry_srv=${registry}
 	fi
 
 	#registry_auth="ghcr.io"
@@ -126,12 +128,12 @@ function get_remote_image(){
 		#echo "private image"
 		registry_token=$(curl --silent \
 			-u "${DOCKER_USERNAME}:${DOCKER_PASSWORD}" \
-			"https://${registry_auth}/token?scope=repository:${image}:pull&service=registry.docker.io" \
+			"https://${registry_auth}/token?scope=repository:${image}:pull&service=${registry_srv}" \
 			| jq -r '.token')
 	else
 		#echo "public image"
 		registry_token=$(curl --silent \
-			"https://${registry_auth}/token?scope=repository:${image}:pull&service=registry.docker.io" \
+			"https://${registry_auth}/token?scope=repository:${image}:pull&service=${registry_srv}" \
 			| jq -r '.token')
 	fi
 
