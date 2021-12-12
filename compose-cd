@@ -94,10 +94,6 @@ function service_down(){
 	notify "service is down"
 }
 
-function check_repo(){
-	echo check repo
-}
-
 function get_remote_image(){
 	local registry
 	local registry_auth
