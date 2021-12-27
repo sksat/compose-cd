@@ -317,7 +317,10 @@ function project_update(){
 
 	# before script
 	if [ -n "${before_script}" ]; then
-		bash -c "${before_script}"
+		if ! bash -c "${before_script}"; then
+			notify "skip restart: before script exit with $?"
+			return
+		fi
 	fi
 
 	# todo: running check
