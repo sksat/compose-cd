@@ -154,6 +154,8 @@ function update_repo(){
 	local branch
 	local local_commit
 	local remote_commit
+	local apply_list
+	local is_restart
 
 	echo -n "[$project:update repository] "
 
@@ -180,6 +182,27 @@ function update_repo(){
 	if "$UPDATE_IMAGE_BY_REPO" ; then
 		notify "pull image by repo..."
 		docker-compose pull
+	fi
+
+	# check apply-list
+	if [ ! -e .compose-apply ]; then
+		return
+	fi
+	apply_list="$(cat .compose-apply)"
+
+	is_restart=false
+	set -f
+	for a in $apply_list; do
+		notify "check: $a"
+		if git diff --name-only HEAD^ "$a" 2> /dev/null; then
+			is_restart=true
+			notify "apply: $a"
+		fi
+	done
+
+	if ! $is_restart; then
+		echo "skip"
+		return 1
 	fi
 }
 
