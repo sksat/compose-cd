@@ -8,7 +8,7 @@
 function version(){
 	local ver
 
-	ver="0.2.1"
+	ver="0.3.0"
 	echo "version: ${ver}"
 }
 
