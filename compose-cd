@@ -177,6 +177,8 @@ function update_repo(){
 	fi
 
 	echo "pull start"
+	local_commit="[$local_commit]($(git remote get-url origin)/commit/${local_commit})"
+	remote_commit="[$remote_commit]($(git remote get-url origin)/commit/${remote_commit})"
 	notify "local(${local_commit}) -> remote(${remote_commit})"
 	sudo -u "$GIT_PULL_USER" git pull origin "$branch"
 
