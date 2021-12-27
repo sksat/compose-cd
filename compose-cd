@@ -388,10 +388,13 @@ function install(){
 	cp ./compose-cd /usr/bin/compose-cd
 	cp ./compose-cd.service /etc/systemd/system/
 	cp ./compose-cd.timer /etc/systemd/system/
+	cp ./compose-cd-cleanup.service /etc/systemd/system/
+	cp ./compose-cd-cleanup.timer /etc/systemd/system/
 
 	systemctl daemon-reload
 	systemctl enable --now compose-cd.service
 	systemctl enable --now compose-cd.timer
+	systemctl enable --now compose-cd-cleanup.timer
 }
 
 function uninstall(){
@@ -402,8 +405,11 @@ function uninstall(){
 
 	systemctl stop compose-cd.timer
 	systemctl stop compose-cd.service
+	systemctl stop compose-cd-cleanup.timer
 	rm /etc/systemd/system/compose-cd.timer
 	rm /etc/systemd/system/compose-cd.service
+	rm /etc/systemd/system/compose-cd-cleanup.timer
+	rm /etc/systemd/system/compose-cd-cleanup.service
 	systemctl daemon-reload
 }
 
@@ -421,6 +427,11 @@ function update(){
 	foreach_project project_update
 }
 
+function cleanup(){
+	echo "cleanup: container images"
+	docker image prune -a -f
+}
+
 case $1 in
 	"help") usage ;;
 	"version") version ;;
@@ -429,4 +440,5 @@ case $1 in
 	"uninstall") uninstall ;;
 	"status") check_status ;;
 	"update") update ;;
+	"cleanup") cleanup ;;
 esac
