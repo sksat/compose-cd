@@ -6,4 +6,4 @@ OnCalendar=daily
 Unit=compose-cd-cleanup.service
 
 [Install]
-WantedBy=default.target
+WantedBy=timers.target
