@@ -197,7 +197,7 @@ $(cat .compose-apply)"
 		#notify "check: $a"
 
 		# exact match
-		if ! echo "$a" | grep '*'; then
+		if ! echo "$a" | grep -q '\*'; then
 			if git diff --name-only HEAD^ | grep "^${a}$"; then
 				is_restart=true
 				notify "apply: $a"
