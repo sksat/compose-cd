@@ -1,0 +1,9 @@
+[Unit]
+Description=compose-cd cleanup
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/compose-cd cleanup
+
+[Install]
+WantedBy=default.target

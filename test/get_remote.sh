@@ -28,6 +28,8 @@ function check_multi_registry(){
 	echo "OK"
 }
 
+PRIVATE_IMAGE=false
+
 check_multi_registry "sksat/archbot-rs" "main"
 check_multi_registry "sksat/mc.yohane.su" "main"
 check_multi_registry "sksat/papermc-docker" "main"

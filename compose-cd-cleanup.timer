@@ -1,0 +1,9 @@
+[Unit]
+Description=compose-cd cleanup timer
+
+[Timer]
+OnCalendar=daily
+Unit=compose-cd-cleanup.service
+
+[Install]
+WantedBy=timers.target

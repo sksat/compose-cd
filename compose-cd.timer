@@ -6,4 +6,4 @@ OnUnitActiveSec=1min
 Unit=compose-cd.service
 
 [Install]
-WantedBy=default.target
+WantedBy=timers.target

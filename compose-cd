@@ -8,7 +8,7 @@
 function version(){
 	local ver
 
-	ver="0.2.1"
+	ver="0.3.0"
 	echo "version: ${ver}"
 }
 
@@ -69,6 +69,8 @@ function load_config(){
 
 	if [ -z ${UPDATE_IMAGE_BY_REPO+x} ]; then UPDATE_IMAGE_BY_REPO=false; fi
 
+	if [ -z ${PRIVATE_IMAGE+x} ]; then PRIVATE_IMAGE=false; fi
+
 	if "$UPDATE_REPO_ONLY" && "$UPDATE_IMAGE_ONLY"; then
 		echo "UPDATE_REPO_ONLY and UPDATE_IMAGE_ONLY are true. This is something wrong."
 		exit 1
@@ -92,10 +94,6 @@ function service_down(){
 	notify "service is down"
 }
 
-function check_repo(){
-	echo check repo
-}
-
 function get_remote_image(){
 	local registry
 	local registry_auth
@@ -111,8 +109,10 @@ function get_remote_image(){
 	if [ "${registry}" = "hub.docker.com" ]; then
 		registry="registry-1.docker.io"
 		registry_auth="auth.docker.io"
+		registry_srv="registry.docker.io"
 	else
 		registry_auth=${registry}
+		registry_srv=${registry}
 	fi
 
 	#registry_auth="ghcr.io"
@@ -120,9 +120,19 @@ function get_remote_image(){
 
 	#echo ${registry_auth}
 
-	registry_token=$(curl --silent \
-		"https://${registry_auth}/token?scope=repository:${image}:pull&service=registry.docker.io" \
-		| jq -r '.token')
+	if ${PRIVATE_IMAGE}; then
+		#echo "private image"
+		registry_token=$(curl --silent \
+			-u "${DOCKER_USERNAME}:${DOCKER_PASSWORD}" \
+			"https://${registry_auth}/token?scope=repository:${image}:pull&service=${registry_srv}" \
+			| jq -r '.token')
+	else
+		#echo "public image"
+		registry_token=$(curl --silent \
+			"https://${registry_auth}/token?scope=repository:${image}:pull&service=${registry_srv}" \
+			| jq -r '.token')
+	fi
+
 
 	#echo $registry_token
 
@@ -144,6 +154,9 @@ function update_repo(){
 	local branch
 	local local_commit
 	local remote_commit
+	local apply_list
+	local apply_list_expand
+	local is_restart
 
 	echo -n "[$project:update repository] "
 
@@ -164,12 +177,52 @@ function update_repo(){
 	fi
 
 	echo "pull start"
+	local_commit="[$local_commit]($(git remote get-url origin)/commit/${local_commit})"
+	remote_commit="[$remote_commit]($(git remote get-url origin)/commit/${remote_commit})"
 	notify "local(${local_commit}) -> remote(${remote_commit})"
 	sudo -u "$GIT_PULL_USER" git pull origin "$branch"
 
 	if "$UPDATE_IMAGE_BY_REPO" ; then
 		notify "pull image by repo..."
 		docker-compose pull
+	fi
+
+	# check apply-list
+	if [ ! -e .compose-apply ]; then
+		return
+	fi
+	apply_list=".compose-cd
+$(cat .compose-apply)"
+
+	apply_list_expand=""
+	for a in $apply_list; do
+		local expand
+		expand=$(ls "$a")
+		apply_list_expand="${apply_list_expand}
+${expand}"
+	done
+
+	is_restart=false
+	set -f
+	for a in $apply_list_expand; do
+		#notify "check: $a"
+
+		if echo "$a" | grep -q '\*'; then
+			notify "error: remain wildcard"
+			return 2
+		fi
+
+		# exact match
+		if git diff --name-only HEAD^ | grep "^${a}$"; then
+			is_restart=true
+			notify "apply: $a"
+			continue
+		fi
+	done
+
+	if ! $is_restart; then
+		notify "skip restart: outside of .compose-apply"
+		return 1
 	fi
 }
 
@@ -269,7 +322,10 @@ function project_update(){
 
 	# before script
 	if [ -n "${before_script}" ]; then
-		bash -c "${before_script}"
+		if ! bash -c "${before_script}"; then
+			notify "skip restart: before script exit with $?"
+			return
+		fi
 	fi
 
 	# todo: running check
@@ -340,10 +396,13 @@ function install(){
 	cp ./compose-cd /usr/bin/compose-cd
 	cp ./compose-cd.service /etc/systemd/system/
 	cp ./compose-cd.timer /etc/systemd/system/
+	cp ./compose-cd-cleanup.service /etc/systemd/system/
+	cp ./compose-cd-cleanup.timer /etc/systemd/system/
 
 	systemctl daemon-reload
 	systemctl enable --now compose-cd.service
 	systemctl enable --now compose-cd.timer
+	systemctl enable --now compose-cd-cleanup.timer
 }
 
 function uninstall(){
@@ -354,8 +413,11 @@ function uninstall(){
 
 	systemctl stop compose-cd.timer
 	systemctl stop compose-cd.service
+	systemctl stop compose-cd-cleanup.timer
 	rm /etc/systemd/system/compose-cd.timer
 	rm /etc/systemd/system/compose-cd.service
+	rm /etc/systemd/system/compose-cd-cleanup.timer
+	rm /etc/systemd/system/compose-cd-cleanup.service
 	systemctl daemon-reload
 }
 
@@ -373,6 +435,11 @@ function update(){
 	foreach_project project_update
 }
 
+function cleanup(){
+	echo "cleanup: container images"
+	docker image prune -a -f
+}
+
 case $1 in
 	"help") usage ;;
 	"version") version ;;
@@ -381,4 +448,5 @@ case $1 in
 	"uninstall") uninstall ;;
 	"status") check_status ;;
 	"update") update ;;
+	"cleanup") cleanup ;;
 esac
