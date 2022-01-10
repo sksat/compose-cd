@@ -383,14 +383,15 @@ function foreach_project(){
 function install(){
 	echo "install"
 
-	read -rp "search root> " SEARCH_ROOT
-	read -rp "git pull user> " GIT_PULL_USER
-	read -rp "Discord webhook URL> " DISCORD_WEBHOOK
+	load_global_config
+	
+	if [ -z ${SEARCH_ROOT+x} ]; then read -rp "search root> " SEARCH_ROOT; fi
+	if [ -z ${GIT_PULL_USER+x} ]; then read -rp "git pull user> " GIT_PULL_USER; fi
+	if [ -z ${DISCORD_WEBHOOK+x} ]; then read -rp "Discord webhook URL> " DISCORD_WEBHOOK; fi
 
 	mkdir /etc/compose-cd
 	echo -e "SEARCH_ROOT=\"${SEARCH_ROOT}\"\n\nGIT_PULL_USER=\"${GIT_PULL_USER}\"\n\nDISCORD_WEBHOOK=\"${DISCORD_WEBHOOK}\"" | tee /etc/compose-cd/config
 
-	load_global_config
 	notify "notify test" "[test] "
 
 	cp ./compose-cd /usr/bin/compose-cd
