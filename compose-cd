@@ -213,7 +213,7 @@ ${expand}"
 		fi
 
 		# exact match
-		if git diff --name-only HEAD^ | grep "^${a}$"; then
+		if git diff --name-only "${local_commit}" | grep "^${a}$"; then
 			is_restart=true
 			notify "apply: $a"
 			continue
