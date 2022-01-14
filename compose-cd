@@ -495,7 +495,7 @@ case $1 in
 	"help") usage ;;
 	"version") version ;;
 	"notify-test") notify "test" ;;
-	"install") shift; install $@;;
+	"install") shift; install "$@";;
 	"uninstall") uninstall ;;
 	"status") check_status ;;
 	"update") update ;;
