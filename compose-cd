@@ -429,7 +429,7 @@ function install() {
 				exit 1
 		esac
 	done
-	if [[ $# -gt 0 ]]; do
+	if [[ $# -gt 0 ]]; then
 		echo "Error: expected a parameter for option: $1"
 		exit 1
 	fi
