@@ -407,7 +407,7 @@ function install() {
 
 	# We only have options with single parameter, so
 	# parse options while there are more than 1 unparsed arguments
-    while [[ $# -gt 1 ]]; do
+	while [[ $# -gt 1 ]]; do
 		case $1 in
 			--search-root|-s)
 				search_root="$2"
