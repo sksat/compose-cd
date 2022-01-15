@@ -55,7 +55,7 @@ jobs:
 
       - name: patch shellcheck suggest
         run: |
-          shellcheck -f diff $(find -name 'compose-cd' -or -name '*.sh' -type f) | patch -p1
+          shellcheck -f diff "$(find . -name 'compose-cd' -or -name '*.sh' -type f)" | patch -p1
 
       - name: shellcheck suggest
         uses: reviewdog/action-suggester@v1.4.0
