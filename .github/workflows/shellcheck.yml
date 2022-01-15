@@ -30,7 +30,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           filter_mode: added
           fail_on_error: true
-          reporter: github-pr-review
+          reporter: github-pr-check
           pattern: |
             *.sh
             compose-cd
