@@ -398,15 +398,53 @@ function foreach_project() {
 	)
 }
 
+# install command can take the following options to automatically configure global options:
+#   -s | --search-root
+#   -g | --git-pull-user
+#   -d | --discord-webhook
 function install() {
 	echo "install"
 
-	read -rp "search root> " SEARCH_ROOT
-	read -rp "git pull user> " GIT_PULL_USER
-	read -rp "Discord webhook URL> " DISCORD_WEBHOOK
+	local search_root
+	local git_pull_user
+	local discord_webhook
+
+	# validate options
+	local options
+	if ! options=$(getopt --options "s:g:d:" --longoptions "search-root:,git-pull-user:,discord-webhook:" -- "$@"); then
+		echo "Incorrect options provided"
+		exit 1
+	fi
+	eval set -- "$options"
+
+	while true; do
+		case $1 in
+			--search-root | -s)
+				shift
+				search_root="$1"
+				;;
+			--git-pull-user | -g)
+				shift
+				git_pull_user="$1"
+				;;
+			--discord-webhook | -d)
+				shift
+				discord_webhook="$1"
+				;;
+			--)
+				shift
+				break
+				;;
+		esac
+		shift
+	done
+
+	if [ -z ${search_root+x} ]; then read -rp "search root> " search_root; fi
+	if [ -z ${git_pull_user+x} ]; then read -rp "git pull user> " git_pull_user; fi
+	if [ -z ${discord_webhook+x} ]; then read -rp "Discord webhook URL> " discord_webhook; fi
 
 	mkdir -p /etc/compose-cd
-	echo -e "SEARCH_ROOT=\"${SEARCH_ROOT}\"\n\nGIT_PULL_USER=\"${GIT_PULL_USER}\"\n\nDISCORD_WEBHOOK=\"${DISCORD_WEBHOOK}\"" | tee /etc/compose-cd/config
+	echo -e "SEARCH_ROOT=\"${search_root}\"\n\nGIT_PULL_USER=\"${git_pull_user}\"\n\nDISCORD_WEBHOOK=\"${discord_webhook}\"" | tee /etc/compose-cd/config
 
 	load_global_config
 	notify "notify test" "[test] "
@@ -462,7 +500,10 @@ case $1 in
 	"help") usage ;;
 	"version") version ;;
 	"notify-test") notify "test" ;;
-	"install") install ;;
+	"install")
+		shift
+		install "$@"
+		;;
 	"uninstall") uninstall ;;
 	"status") check_status ;;
 	"update") update ;;
