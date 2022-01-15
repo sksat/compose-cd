@@ -387,7 +387,7 @@ function install(){
 	read -rp "git pull user> " GIT_PULL_USER
 	read -rp "Discord webhook URL> " DISCORD_WEBHOOK
 
-	mkdir /etc/compose-cd
+	mkdir -p /etc/compose-cd
 	echo -e "SEARCH_ROOT=\"${SEARCH_ROOT}\"\n\nGIT_PULL_USER=\"${GIT_PULL_USER}\"\n\nDISCORD_WEBHOOK=\"${DISCORD_WEBHOOK}\"" | tee /etc/compose-cd/config
 
 	load_global_config
