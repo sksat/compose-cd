@@ -24,6 +24,15 @@ jobs:
           ls -lh compose-cd.zip
           file compose-cd.zip
 
+      - name: check arvhived files
+        run: |
+          mkdir tmp
+          cd tmp
+          unzip ../compose-cd.zip
+          tree
+          cd ..
+          rm -rf tmp
+
       - name: generate tar.*
         run: |
           git config tar.tar.bz2.command bzip2
