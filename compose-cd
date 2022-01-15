@@ -405,31 +405,36 @@ function install() {
 	local git_pull_user
 	local discord_webhook
 
-	# We only have options with single parameter, so
-	# parse options while there are more than 1 unparsed arguments
-	while [[ $# -gt 1 ]]; do
-		case $1 in
-			--search-root|-s)
-				search_root="$2"
-				shift 2
-				;;
-			--git-pull-user|-g)
-				git_pull_user="$2"
-				shift 2
-				;;
-			--discord-webhook|-d)
-				discord_webhook="$2"
-				shift 2
-				;;
-			*)
-				echo "Error: unknown option: $1"
-				exit 1
-		esac
-	done
-	if [[ $# -gt 0 ]]; then
-		echo "Error: expected a parameter for option: $1"
+	# validate options
+	local options
+	options=$(getopt --options "s:g:d:" --longoptions "search-root:,git-pull-user:,discord-webhook:" -- "$@")
+	if [[ $? -eq 0 ]]; then
+		echo "Incorrect options provided"
 		exit 1
 	fi
+	eval set -- "$options"
+
+	while true; do
+		case $1 in
+			--search-root|-s)
+				shift
+				search_root="$1"
+				;;
+			--git-pull-user|-g)
+				shift
+				git_pull_user="$1"
+				;;
+			--discord-webhook|-d)
+				shift
+				discord_webhook="$1"
+				;;
+			--)
+				shift
+				break
+				;;
+		esac
+		shift
+	done
 
 	if [ -z ${search_root+x} ]; then read -rp "search root> " search_root; fi
 	if [ -z ${git_pull_user+x} ]; then read -rp "git pull user> " git_pull_user; fi
