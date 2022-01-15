@@ -461,6 +461,11 @@ function install() {
 
 	mkdir -p /etc/compose-cd
 	tee /etc/compose-cd/config <<EOS
+VER_MAJOR="${COMPOSE_CD_VER_MAJOR}"
+VER_MINOR="${COMPOSE_CD_VER_MINOR}"
+VER_PATCH="${COMPOSE_CD_VER_PATCH}"
+VER_PRE="${COMPOSE_CD_VER_PRE}"
+
 SEARCH_ROOT="${search_root}"
 
 GIT_PULL_USER="${git_pull_user}"
