@@ -48,11 +48,11 @@ jobs:
         working-directory: ../archive-contents
         run: |
           cp ../compose-cd/compose-cd.* .
-          md5sum ./* > md5sums.txt
-          sha1sum ./* > sha1sums.txt
-          sha256sum ./* > sha256sums.txt
-          sha512sum ./* > sha512sums.txt
-          mv ./*sums.txt ../compose-cd/
+          ls -lh
+          md5sum ./* > ../compose-cd/md5sums.txt
+          sha1sum ./* > ../compose-cd/sha1sums.txt
+          sha256sum ./* > ../compose-cd/sha256sums.txt
+          sha512sum ./* > ../compose-cd/sha512sums.txt
 
       - name: generate upload file list
         id: upload-files
