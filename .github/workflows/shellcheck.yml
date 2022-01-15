@@ -24,7 +24,9 @@ jobs:
           filter_mode: added
           fail_on_error: true
           reporter: github-pr-review
-          pattern: "compose-cd"
+          pattern: |
+            *.sh
+            compose-cd
 
       - name: shellcheck(github-check)
         uses: reviewdog/action-shellcheck@v1.13.0
@@ -33,4 +35,6 @@ jobs:
           filter_mode: nofilter
           fail_on_error: true
           reporter: github-check
-          pattern: "compose-cd"
+          pattern: |
+            *.sh
+            compose-cd
