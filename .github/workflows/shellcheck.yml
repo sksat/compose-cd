@@ -35,6 +35,18 @@ jobs:
             *.sh
             compose-cd
 
+      - name: shellcheck(github-pr-check)
+        if: ${{ github.event_name }} == 'pull_request'
+        uses: reviewdog/action-shellcheck@v1.13.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          filter_mode: nofilter
+          fail_on_error: true
+          reporter: github-pr-check
+          pattern: |
+            *.sh
+            compose-cd
+
       - name: shellcheck(github-check)
         uses: reviewdog/action-shellcheck@v1.13.0
         if: github.event_name == 'push'
