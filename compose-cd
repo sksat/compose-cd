@@ -54,6 +54,7 @@ function load_global_config(){
 		echo "/etc/compose-cd/config not found"
 		exit 1
 	fi
+	# shellcheck disable=SC1091
 	source /etc/compose-cd/config
 }
 
@@ -63,6 +64,7 @@ function load_config(){
 		echo "config file not found"
 		return
 	fi
+	# shellcheck disable=SC1091
 	source ./.compose-cd # super config system
 	if [ -z ${UPDATE_REPO_ONLY+x} ]; then UPDATE_REPO_ONLY=false; fi
 	if [ -z ${UPDATE_IMAGE_ONLY+x} ]; then UPDATE_IMAGE_ONLY=false; fi
