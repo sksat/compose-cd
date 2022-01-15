@@ -8,6 +8,7 @@ on:
     paths:
       - '.github/workflows/shellcheck.yml'
       - 'compose-cd'
+      - '**/*.sh'
 
 jobs:
   shellcheck:
