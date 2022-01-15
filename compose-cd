@@ -8,7 +8,7 @@
 function version() {
 	local compose_cd_ver
 
-	compose_cd_ver="v0.3.2-rc.1"
+	compose_cd_ver="v0.3.2-rc.2"
 	echo "version: ${compose_cd_ver}"
 }
 
