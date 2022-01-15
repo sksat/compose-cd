@@ -26,12 +26,11 @@ jobs:
 
       - name: check arvhived files
         run: |
-          mkdir tmp
-          cd tmp
-          unzip ../compose-cd.zip
-          tree
           cd ..
-          rm -rf tmp
+          mkdir archive-contents
+          cd archive-contents
+          unzip ../compose-cd/compose-cd.zip
+          tree
 
       - name: generate tar.*
         run: |
@@ -45,10 +44,20 @@ jobs:
           ls -lh compose-cd.tar.*
           file compose-cd.tar.*
 
+      - name: generate checksum list
+        working-directory: ../archive-contents
+        run: |
+          cp ../compose-cd/compose-cd.* .
+          ls -lh
+          md5sum ./* > ../compose-cd/md5sums.txt
+          sha1sum ./* > ../compose-cd/sha1sums.txt
+          sha256sum ./* > ../compose-cd/sha256sums.txt
+          sha512sum ./* > ../compose-cd/sha512sums.txt
+
       - name: generate upload file list
         id: upload-files
         run: |
-          list=$(ls README.md LICENSE compose-cd*)
+          list=$(ls README.md LICENSE compose-cd* ./*sums.txt)
           echo "${list}"
           list="${list//$'\n'/'%0A'}"
           echo "::set-output name=list::${list}"
