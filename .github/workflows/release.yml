@@ -27,9 +27,11 @@ jobs:
       - name: generate tar.*
         run: |
           git config tar.tar.bz2.command bzip2
+          git config tar.tar.bz2.command xz
           git config tar.tar.zst.command zstd
           git archive HEAD --output=compose-cd.tar.gz
           git archive HEAD --output=compose-cd.tar.bz2
+          git archive HEAD --output=compose-cd.tar.xz
           git archive HEAD --output=compose-cd.tar.zst
           ls -lh compose-cd.tar.*
           file compose-cd.tar.*
