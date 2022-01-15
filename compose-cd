@@ -6,11 +6,10 @@
 #}
 
 function version() {
+	local compose_cd_ver
 
-	local ver
-
-	ver="0.3.1"
-	echo "version: ${ver}"
+	compose_cd_ver="v0.3.2-rc.3"
+	echo "version: ${compose_cd_ver}"
 }
 
 function usage() {
