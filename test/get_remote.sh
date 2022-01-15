@@ -1,9 +1,9 @@
 #!/bin/bash
-cd `dirname $0`
+cd $(dirname $0)
 
 source ../compose-cd
 
-function check_multi_registry(){
+function check_multi_registry() {
 	local image
 	local tag
 
