@@ -460,7 +460,7 @@ function install() {
 	if [ -z ${discord_webhook+x} ]; then read -rp "Discord webhook URL> " discord_webhook; fi
 
 	mkdir -p /etc/compose-cd
-	tee /etc/compose-cd/config << EOS
+	tee /etc/compose-cd/config <<EOS
 SEARCH_ROOT="${search_root}"
 
 GIT_PULL_USER="${git_pull_user}"
