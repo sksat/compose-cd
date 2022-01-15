@@ -3,6 +3,7 @@ name: shellcheck
 on:
   pull_request:
     paths:
+      - '.github/workflows/shellcheck.yml'
       - 'compose-cd'
 
 jobs:
