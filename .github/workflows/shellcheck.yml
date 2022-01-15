@@ -37,10 +37,11 @@ jobs:
 
       - name: shellcheck(github-check)
         uses: reviewdog/action-shellcheck@v1.13.0
+        if: github.event_name == 'push'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           filter_mode: nofilter
-          fail_on_error: ${{ github.event_name != 'pull_request' }}
+          fail_on_error: true
           reporter: github-check
           pattern: |
             *.sh
