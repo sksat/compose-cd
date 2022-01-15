@@ -415,15 +415,15 @@ function install() {
 
 	while true; do
 		case $1 in
-			--search-root|-s)
+			--search-root | -s)
 				shift
 				search_root="$1"
 				;;
-			--git-pull-user|-g)
+			--git-pull-user | -g)
 				shift
 				git_pull_user="$1"
 				;;
-			--discord-webhook|-d)
+			--discord-webhook | -d)
 				shift
 				discord_webhook="$1"
 				;;
@@ -496,7 +496,10 @@ case $1 in
 	"help") usage ;;
 	"version") version ;;
 	"notify-test") notify "test" ;;
-	"install") shift; install "$@";;
+	"install")
+		shift
+		install "$@"
+		;;
 	"uninstall") uninstall ;;
 	"status") check_status ;;
 	"update") update ;;
