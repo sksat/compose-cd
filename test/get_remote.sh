@@ -1,6 +1,7 @@
 #!/bin/bash
 cd "$(dirname "$0")" || exit
 
+# shellcheck disable=SC1091
 source ../compose-cd
 
 function check_multi_registry() {
@@ -28,6 +29,7 @@ function check_multi_registry() {
 	echo "OK"
 }
 
+# shellcheck disable=SC2034
 PRIVATE_IMAGE=false
 
 check_multi_registry "sksat/archbot-rs" "main"
