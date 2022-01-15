@@ -1,6 +1,7 @@
 #!/bin/bash
-cd $(dirname $0)
+cd "$(dirname "$0")" || exit
 
+# shellcheck disable=SC1091
 source ../compose-cd
 
 function check_multi_registry() {
@@ -15,8 +16,8 @@ function check_multi_registry() {
 
 	echo -n "${image}:${tag} "
 
-	ghcr=$(get_remote_image "ghcr.io" ${image} ${tag})
-	dockerhub=$(get_remote_image "hub.docker.com" ${image} ${tag})
+	ghcr=$(get_remote_image "ghcr.io" "${image}" "${tag}")
+	dockerhub=$(get_remote_image "hub.docker.com" "${image}" "${tag}")
 
 	if [ "$ghcr" != "$dockerhub" ]; then
 		echo "error"
@@ -28,6 +29,7 @@ function check_multi_registry() {
 	echo "OK"
 }
 
+# shellcheck disable=SC2034
 PRIVATE_IMAGE=false
 
 check_multi_registry "sksat/archbot-rs" "main"

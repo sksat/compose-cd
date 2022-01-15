@@ -8,13 +8,20 @@ on:
     paths:
       - '.github/workflows/shellcheck.yml'
       - 'compose-cd'
+      - '**/*.sh'
 
 jobs:
   shellcheck:
     name: shellcheck with reviewdog
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.4.0
+
+      - name: shfmt suggest
+        uses: reviewdog/action-shfmt@v1.0.1
+        with:
+          fail_on_error: true
+          shfmt_flags: '-ci'
 
       - name: shellcheck(github-pr-review)
         if: ${{ github.event_name }} == 'pull_request'
@@ -23,14 +30,35 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           filter_mode: added
           fail_on_error: true
-          reporter: github-pr-review
-          pattern: "compose-cd"
+          reporter: github-pr-check
+          pattern: |
+            *.sh
+            compose-cd
 
       - name: shellcheck(github-check)
         uses: reviewdog/action-shellcheck@v1.13.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           filter_mode: nofilter
-          fail_on_error: true
+          fail_on_error: ${{ github.event_name != 'pull_request' }}
           reporter: github-check
-          pattern: "compose-cd"
+          pattern: |
+            *.sh
+            compose-cd
+
+      - name: setup shellcheck
+        run: |
+          scversion="latest"
+          wget -qO- "https://github.com/koalaman/shellcheck/releases/download/${scversion?}/shellcheck-${scversion?}.linux.x86_64.tar.xz" | tar -xJv
+          sudo cp "shellcheck-${scversion}/shellcheck" /usr/local/bin/
+          rm -rf "shellcheck-${scversion}/shellcheck"
+
+      - name: patch shellcheck suggest
+        run: |
+          shellcheck -f diff "$(find . -name 'compose-cd' -or -name '*.sh' -type f)" | patch -p1
+
+      - name: shellcheck suggest
+        if: ${{ github.event_name }} == 'pull_request'
+        uses: reviewdog/action-suggester@v1.4.0
+        with:
+          tool_name: shellcheck
