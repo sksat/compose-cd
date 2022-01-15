@@ -1,5 +1,5 @@
 #!/bin/bash
-cd $(dirname $0)
+cd "$(dirname $0)" || exit
 
 source ../compose-cd
 
@@ -15,8 +15,8 @@ function check_multi_registry() {
 
 	echo -n "${image}:${tag} "
 
-	ghcr=$(get_remote_image "ghcr.io" ${image} ${tag})
-	dockerhub=$(get_remote_image "hub.docker.com" ${image} ${tag})
+	ghcr=$(get_remote_image "ghcr.io" "${image}" "${tag}")
+	dockerhub=$(get_remote_image "hub.docker.com" "${image}" "${tag}")
 
 	if [ "$ghcr" != "$dockerhub" ]; then
 		echo "error"
