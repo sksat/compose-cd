@@ -5,14 +5,15 @@
 #	echo "[compose-mock]:$p $1 $2"
 #}
 
-function version(){
+function version() {
+
 	local ver
 
 	ver="0.3.1"
 	echo "version: ${ver}"
 }
 
-function usage(){
+function usage() {
 	echo "usage> compose-cd [COMMAND]"
 	echo "commands:"
 	echo "  help        show this usage"
@@ -22,17 +23,17 @@ function usage(){
 	echo "  update      update projects"
 }
 
-function notify_discord(){
+function notify_discord() {
 	local webhook
 	local msg
 
 	webhook=$1
 	msg="$2"
 	curl --silent -H "Accept: application/json" -H "Content-type: application/json" -X POST \
-			-d '{"username":"compose-cd","content":'"\"$msg\"}" "$webhook"
+		-d '{"username":"compose-cd","content":'"\"$msg\"}" "$webhook"
 }
 
-function notify(){
+function notify() {
 	local msg
 
 	if [ -z ${2+x} ]; then
@@ -45,11 +46,11 @@ function notify(){
 	notify_discord "${DISCORD_WEBHOOK}" "$msg"
 }
 
-function notify_test(){
+function notify_test() {
 	notify "test"
 }
 
-function load_global_config(){
+function load_global_config() {
 	if [ ! -e "/etc/compose-cd/config" ]; then
 		echo "/etc/compose-cd/config not found"
 		exit 1
@@ -58,7 +59,7 @@ function load_global_config(){
 	source /etc/compose-cd/config
 }
 
-function load_config(){
+function load_config() {
 	echo -n "[$proj:load config] "
 	if [ ! -e ./.compose-cd ]; then
 		echo "config file not found"
@@ -85,18 +86,18 @@ function load_config(){
 	echo "ok"
 }
 
-function service_up(){
+function service_up() {
 	notify "starting service..."
-	docker-compose up -d 2> /dev/null
+	docker-compose up -d 2>/dev/null
 	notify "service is up!"
 }
 
-function service_down(){
-	docker-compose down 2> /dev/null
+function service_down() {
+	docker-compose down 2>/dev/null
 	notify "service is down"
 }
 
-function get_remote_image(){
+function get_remote_image() {
 	local registry
 	local registry_auth
 	local image
@@ -126,15 +127,14 @@ function get_remote_image(){
 		#echo "private image"
 		registry_token=$(curl --silent \
 			-u "${DOCKER_USERNAME}:${DOCKER_PASSWORD}" \
-			"https://${registry_auth}/token?scope=repository:${image}:pull&service=${registry_srv}" \
-			| jq -r '.token')
+			"https://${registry_auth}/token?scope=repository:${image}:pull&service=${registry_srv}" |
+			jq -r '.token')
 	else
 		#echo "public image"
 		registry_token=$(curl --silent \
-			"https://${registry_auth}/token?scope=repository:${image}:pull&service=${registry_srv}" \
-			| jq -r '.token')
+			"https://${registry_auth}/token?scope=repository:${image}:pull&service=${registry_srv}" |
+			jq -r '.token')
 	fi
-
 
 	#echo $registry_token
 
@@ -152,7 +152,7 @@ function get_remote_image(){
 	echo "${manifest}" | jq -r '.config.digest'
 }
 
-function update_repo(){
+function update_repo() {
 	local branch
 	local local_commit
 	local remote_commit
@@ -184,7 +184,7 @@ function update_repo(){
 	notify "local(${local_commit}) -> remote(${remote_commit})"
 	sudo -u "$GIT_PULL_USER" git pull origin "$branch"
 
-	if "$UPDATE_IMAGE_BY_REPO" ; then
+	if "$UPDATE_IMAGE_BY_REPO"; then
 		notify "pull image by repo..."
 		docker-compose pull
 	fi
@@ -228,7 +228,7 @@ ${expand}"
 	fi
 }
 
-function update_image(){
+function update_image() {
 	local img_location
 	local img_tag
 	local local_img
@@ -237,9 +237,15 @@ function update_image(){
 
 	echo -n "[$project:update image] "
 
-	if [ -z ${REGISTRY+x} ]; then echo "error: REGISTRY is not set"; return; fi
-	if [ -z ${IMAGE+x} ]; then echo "error: REGISTRY is not set"; return; fi
-	img_location="${REGISTRY}/${IMAGE}"   # like ghcr.io/sksat/kuso-subdomain-adder
+	if [ -z ${REGISTRY+x} ]; then
+		echo "error: REGISTRY is not set"
+		return
+	fi
+	if [ -z ${IMAGE+x} ]; then
+		echo "error: REGISTRY is not set"
+		return
+	fi
+	img_location="${REGISTRY}/${IMAGE}" # like ghcr.io/sksat/kuso-subdomain-adder
 
 	if [ -z ${IMG_TAG+x} ]; then
 		echo "warning: IMG_TAG is not set"
@@ -281,7 +287,7 @@ function update_image(){
 	echo "[$project:update image] done"
 }
 
-function project_update(){
+function project_update() {
 	local proj=$1
 	local rr
 	local ri
@@ -293,11 +299,13 @@ function project_update(){
 
 	rr=1
 	ri=1
-	if ! $UPDATE_IMAGE_ONLY ; then
-		update_repo; rr=$?
+	if ! $UPDATE_IMAGE_ONLY; then
+		update_repo
+		rr=$?
 	fi
 	if ! "$UPDATE_REPO_ONLY"; then
-		update_image; ri=$?
+		update_image
+		ri=$?
 	fi
 
 	# no update
@@ -342,7 +350,7 @@ function project_update(){
 	fi
 }
 
-function project_status(){
+function project_status() {
 	local proj
 	local services
 
@@ -358,31 +366,40 @@ function project_status(){
 	fi
 }
 
-function foreach_project(){
+function foreach_project() {
 	local search_root
 	local cfgs
 
-	if [ -z ${SEARCH_ROOT+x} ]; then echo "error: SEARCH_ROOT is not set"; return; fi
+	if [ -z ${SEARCH_ROOT+x} ]; then
+		echo "error: SEARCH_ROOT is not set"
+		return
+	fi
 	search_root=${SEARCH_ROOT}
 
 	# execute in subshell
 	(
-		cd "${search_root}" || { echo "error: SEARCH_ROOT(${search_root}) not found"; exit 1; }
+		cd "${search_root}" || {
+			echo "error: SEARCH_ROOT(${search_root}) not found"
+			exit 1
+		}
 		cfgs=$(find . -maxdepth 5 -type f -name '.compose-cd')
 		for c in $cfgs; do
 			local proj
 			proj=$(dirname "$c")
-			project=$proj   # global
+			project=$proj # global
 
 			(
-				cd "$proj" || { echo "[$proj] error: project not fouund"; exit 1; }
+				cd "$proj" || {
+					echo "[$proj] error: project not fouund"
+					exit 1
+				}
 				eval "$1 $proj"
 			)
 		done
 	)
 }
 
-function install(){
+function install() {
 	echo "install"
 
 	read -rp "search root> " SEARCH_ROOT
@@ -407,7 +424,7 @@ function install(){
 	systemctl enable --now compose-cd-cleanup.timer
 }
 
-function uninstall(){
+function uninstall() {
 	echo "uninstall"
 
 	rm /usr/bin/compose-cd
@@ -423,21 +440,21 @@ function uninstall(){
 	systemctl daemon-reload
 }
 
-function check_status(){
+function check_status() {
 	echo "check status"
 
 	load_global_config
 	foreach_project project_status
 }
 
-function update(){
+function update() {
 	echo "update"
 
 	load_global_config
 	foreach_project project_update
 }
 
-function cleanup(){
+function cleanup() {
 	echo "cleanup: container images"
 	docker image prune -a -f
 }
