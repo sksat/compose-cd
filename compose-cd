@@ -398,6 +398,10 @@ function foreach_project() {
 	)
 }
 
+# install command can take the following options to automatically configure global options:
+#   -s | --search-root
+#   -g | --git-pull-user
+#   -d | --discord-webhook
 function install() {
 	echo "install"
 
