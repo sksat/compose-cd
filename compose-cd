@@ -407,8 +407,7 @@ function install() {
 
 	# validate options
 	local options
-	options=$(getopt --options "s:g:d:" --longoptions "search-root:,git-pull-user:,discord-webhook:" -- "$@")
-	if [[ $? -eq 0 ]]; then
+	if ! options=$(getopt --options "s:g:d:" --longoptions "search-root:,git-pull-user:,discord-webhook:" -- "$@"); then
 		echo "Incorrect options provided"
 		exit 1
 	fi
