@@ -1,5 +1,10 @@
 #!/bin/bash
 
+COMPOSE_CD_VER_MAJOR='0'
+COMPOSE_CD_VER_MINOR='3'
+COMPOSE_CD_VER_PATCH='4'
+COMPOSE_CD_VER_PRE=''
+
 #function docker-compose(){
 #	local p=`pwd`
 #	echo "[compose-mock]:$p $1 $2"
@@ -8,7 +13,10 @@
 function version() {
 	local compose_cd_ver
 
-	compose_cd_ver="v0.3.4"
+	compose_cd_ver="v${COMPOSE_CD_VER_MAJOR}.${COMPOSE_CD_VER_MINOR}.${COMPOSE_CD_VER_PATCH}"
+	if [ -n "${COMPOSE_CD_VER_PRE}" ]; then
+		compose_cd_ver="${compose_cd_ver}-${COMPOSE_CD_VER_PRE}"
+	fi
 	echo "version: ${compose_cd_ver}"
 }
 
