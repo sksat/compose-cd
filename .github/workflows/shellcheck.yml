@@ -1,8 +1,12 @@
 name: shellcheck
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     paths:
+      - '.github/workflows/shellcheck.yml'
       - 'compose-cd'
 
 jobs:
@@ -12,9 +16,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: shellcheck
-        uses: reviewdog/action-shellcheck@v1
+      - name: shellcheck(github-pr-review)
+        if: ${{ github.event_name }} == 'pull_request'
+        uses: reviewdog/action-shellcheck@v1.13.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          filter_mode: added
+          fail_on_error: true
           reporter: github-pr-review
+          pattern: "compose-cd"
+
+      - name: shellcheck(github-check)
+        uses: reviewdog/action-shellcheck@v1.13.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          filter_mode: nofilter
+          fail_on_error: true
+          reporter: github-check
           pattern: "compose-cd"
