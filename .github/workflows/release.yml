@@ -18,6 +18,28 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: generate zip
+        run: |
+          cd ..
+          zip -r compose-cd.zip compose-cd
+          ls -lh compose-cd.zip
+          file compose-cd.zip
+
+      - name: generate tar.*
+        run: |
+          cd ..
+          tar cfv compose-cd.tar compose-cd
+          ls -lh compose-cd.tar
+          gzip compose-cd.tar
+          bzip2 compose-cd.tar
+          zstd compose-cd.tar
+
+      - name: check archive files
+        run: |
+          cd ..
+          ls -lh compose-cd.*
+          file compose-cd.*
+
       - name: Pre Release
         uses: softprops/action-gh-release@v0.1.14
         if: startsWith(github.ref, 'refs/tags/') && contains(github.ref, 'rc')
