@@ -20,25 +20,17 @@ jobs:
 
       - name: generate zip
         run: |
-          cd ..
-          zip -r compose-cd.zip compose-cd
+          git archive HEAD --output=compose-cd.zip
           ls -lh compose-cd.zip
           file compose-cd.zip
 
       - name: generate tar.*
         run: |
-          cd ..
-          tar cfv compose-cd.tar compose-cd
-          ls -lh compose-cd.tar
-          gzip compose-cd.tar
-          bzip2 compose-cd.tar
-          zstd compose-cd.tar
-
-      - name: check archive files
-        run: |
-          cd ..
-          ls -lh compose-cd.*
-          file compose-cd.*
+          git archive HEAD --output=compose-cd.tar.gz
+          git archive HEAD --output=compose-cd.tar.bz2
+          git archive HEAD --output=compose-cd.tar.zst
+          ls -lh compose-cd.tar.*
+          file compose-cd.tar.*
 
       - name: Pre Release
         uses: softprops/action-gh-release@v0.1.14
