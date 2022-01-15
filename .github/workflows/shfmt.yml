@@ -1,0 +1,19 @@
+name: reviewdog / shfmt
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/shfmt.yml'
+      - 'compose-cd'
+      - '**/*.sh'
+
+jobs:
+  shfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.4.0
+
+      - uses: reviewdog/action-shfmt@v1.0.1
+        with:
+          fail_on_error: true
+          shfmt_flags: '-ci'
