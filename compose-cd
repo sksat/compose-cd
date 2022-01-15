@@ -411,18 +411,15 @@ function install() {
 		case $1 in
 			--search-root|-s)
 				search_root="$2"
-				shift
-				shift
+				shift 2
 				;;
 			--git-pull-user|-g)
 				git_pull_user="$2"
-				shift
-				shift
+				shift 2
 				;;
 			--discord-webhook|-d)
 				discord_webhook="$2"
-				shift
-				shift
+				shift 2
 				;;
 			*)
 				echo "Error: unknown option: $1"
