@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - 'v*'
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
 
 permissions:
   contents: write
@@ -15,6 +18,41 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: generate zip
+        run: |
+          git archive HEAD --output=compose-cd.zip
+          ls -lh compose-cd.zip
+          file compose-cd.zip
+
+      - name: check arvhived files
+        run: |
+          mkdir tmp
+          cd tmp
+          unzip ../compose-cd.zip
+          tree
+          cd ..
+          rm -rf tmp
+
+      - name: generate tar.*
+        run: |
+          git config tar.tar.bz2.command bzip2
+          git config tar.tar.bz2.command xz
+          git config tar.tar.zst.command zstd
+          git archive HEAD --output=compose-cd.tar.gz
+          git archive HEAD --output=compose-cd.tar.bz2
+          git archive HEAD --output=compose-cd.tar.xz
+          git archive HEAD --output=compose-cd.tar.zst
+          ls -lh compose-cd.tar.*
+          file compose-cd.tar.*
+
+      - name: generate upload file list
+        id: upload-files
+        run: |
+          list=$(ls README.md LICENSE compose-cd*)
+          echo "${list}"
+          list="${list//$'\n'/'%0A'}"
+          echo "::set-output name=list::${list}"
+
       - name: Pre Release
         uses: softprops/action-gh-release@v0.1.14
         if: startsWith(github.ref, 'refs/tags/') && contains(github.ref, 'rc')
@@ -22,12 +60,7 @@ jobs:
           draft: true
           prerelease: true
           generate_release_notes: false
-          files: |
-            ./compose-cd
-            ./compose-cd.service
-            ./compose-cd.timer
-            ./compose-cd-cleanup.service
-            ./compose-cd-cleanup.timer
+          files: ${{ steps.upload-files.outputs.list }}
 
       - name: Release
         uses: softprops/action-gh-release@v0.1.14
@@ -36,9 +69,4 @@ jobs:
           draft: false
           prerelease: false
           generate_release_notes: true
-          files: |
-            ./compose-cd
-            ./compose-cd.service
-            ./compose-cd.timer
-            ./compose-cd-cleanup.service
-            ./compose-cd-cleanup.timer
+          files: ${{ steps.upload-files.outputs.list }}
