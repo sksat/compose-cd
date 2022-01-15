@@ -40,7 +40,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           filter_mode: nofilter
-          fail_on_error: true
+          fail_on_error: ${{ github.event_name != 'pull_request' }}
           reporter: github-check
           pattern: |
             *.sh
@@ -58,6 +58,7 @@ jobs:
           shellcheck -f diff "$(find . -name 'compose-cd' -or -name '*.sh' -type f)" | patch -p1
 
       - name: shellcheck suggest
+        if: ${{ github.event_name }} == 'pull_request'
         uses: reviewdog/action-suggester@v1.4.0
         with:
           tool_name: shellcheck
