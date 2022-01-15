@@ -15,7 +15,13 @@ jobs:
     name: shellcheck with reviewdog
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.4.0
+
+      - name: shfmt suggest
+        uses: reviewdog/action-shfmt@v1.0.1
+        with:
+          fail_on_error: true
+          shfmt_flags: '-ci'
 
       - name: shellcheck(github-pr-review)
         if: ${{ github.event_name }} == 'pull_request'
