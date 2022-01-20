@@ -1,5 +1,10 @@
 #!/bin/bash
 
+COMPOSE_CD_VER_MAJOR='0'
+COMPOSE_CD_VER_MINOR='4'
+COMPOSE_CD_VER_PATCH='0'
+COMPOSE_CD_VER_PRE=''
+
 #function docker-compose(){
 #	local p=`pwd`
 #	echo "[compose-mock]:$p $1 $2"
@@ -8,7 +13,10 @@
 function version() {
 	local compose_cd_ver
 
-	compose_cd_ver="v0.3.4"
+	compose_cd_ver="v${COMPOSE_CD_VER_MAJOR}.${COMPOSE_CD_VER_MINOR}.${COMPOSE_CD_VER_PATCH}"
+	if [ -n "${COMPOSE_CD_VER_PRE}" ]; then
+		compose_cd_ver="${compose_cd_ver}-${COMPOSE_CD_VER_PRE}"
+	fi
 	echo "version: ${compose_cd_ver}"
 }
 
@@ -58,6 +66,14 @@ function load_global_config() {
 	fi
 	# shellcheck disable=SC1091
 	source /etc/compose-cd/config
+
+	# version compatibility check
+	if [ "${COMPOSE_CD_VER_MAJOR}" != "${VER_MAJOR}" ]; then
+		notify "major version mismatch!!!: ${COMPOSE_CD_VER_MAJOR} != ${VER_MAJOR}" "[warn] "
+	fi
+	if [ "${COMPOSE_CD_VER_MINOR}" != "${VER_MINOR}" ]; then
+		notify "minor version mismatch!!!: ${COMPOSE_CD_VER_MINOR} != ${VER_MINOR}" "[warn] "
+	fi
 }
 
 function load_config() {
@@ -217,6 +233,9 @@ ${expand}"
 			notify "error: remain wildcard"
 			return 2
 		fi
+
+		# non top-level .compose-cd(monorepo): #30
+		a="$(git rev-parse --show-prefix)${a}"
 
 		# exact match
 		if git diff --name-only "${local_commit}" | grep "^${a}$"; then
@@ -449,7 +468,18 @@ function install() {
 	if [ -z ${discord_webhook+x} ]; then read -rp "Discord webhook URL> " discord_webhook; fi
 
 	mkdir -p /etc/compose-cd
-	echo -e "SEARCH_ROOT=\"${search_root}\"\n\nGIT_PULL_USER=\"${git_pull_user}\"\n\nDISCORD_WEBHOOK=\"${discord_webhook}\"" | tee /etc/compose-cd/config
+	tee /etc/compose-cd/config <<EOS
+VER_MAJOR="${COMPOSE_CD_VER_MAJOR}"
+VER_MINOR="${COMPOSE_CD_VER_MINOR}"
+VER_PATCH="${COMPOSE_CD_VER_PATCH}"
+VER_PRE="${COMPOSE_CD_VER_PRE}"
+
+SEARCH_ROOT="${search_root}"
+
+GIT_PULL_USER="${git_pull_user}"
+
+DISCORD_WEBHOOK="${discord_webhook}"
+EOS
 
 	load_global_config
 	notify "notify test" "[test] "
