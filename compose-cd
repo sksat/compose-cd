@@ -66,6 +66,14 @@ function load_global_config() {
 	fi
 	# shellcheck disable=SC1091
 	source /etc/compose-cd/config
+
+	# version compatibility check
+	if [ "${COMPOSE_CD_VER_MAJOR}" != "${VER_MAJOR}" ]; then
+		notify "major version mismatch!!!: ${COMPOSE_CD_VER_MAJOR} != ${VER_MAJOR}" "[warn] "
+	fi
+	if [ "${COMPOSE_CD_VER_MINOR}" != "${VER_MINOR}" ]; then
+		notify "minor version mismatch!!!: ${COMPOSE_CD_VER_MINOR} != ${VER_MINOR}" "[warn] "
+	fi
 }
 
 function load_config() {
