@@ -9,7 +9,7 @@
 Continuous Deployment for docker-compose
 
 ```sh
-$ wget https://raw.githubusercontent.com/sksat/compose-cd/main/compose-cd
+$ wget https://github.com/sksat/compose-cd/releases/latest/download/compose-cd
 $ ./compose-cd install
 $ compose-cd update     # update
 ```
