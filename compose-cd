@@ -34,7 +34,7 @@ function notify_discord() {
 	local webhook
 	local msg
 
-	webhook=$1
+	webhook="$1"
 	msg="$2"
 	curl --silent -H "Accept: application/json" -H "Content-type: application/json" -X POST \
 		-d '{"username":"compose-cd","content":'"\"$msg\"}" "$webhook"
@@ -51,8 +51,10 @@ function notify() {
 	fi
 
 	echo "$msg"
-	# shellcheck disable=SC2153
-	notify_discord "${DISCORD_WEBHOOK}" "$msg"
+
+	if [ -n "${DISCORD_WEBHOOK+x}" ]; then
+		notify_discord "${DISCORD_WEBHOOK}" "$msg"
+	fi
 }
 
 function notify_test() {
