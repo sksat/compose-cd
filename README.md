@@ -96,5 +96,15 @@ At first glance, updating this configuration may seem to be very tedious, but it
 Example:
   - https://github.com/sksat/mc.yohane.su/pull/232
 
+## Blog
+- [マイクラサーバをGitHubで運用する](https://sksat.hatenablog.com/entry/2021/08/26/015620)
+
+## Slide
+- VRC-LT #9
+[![slide page 0](https://speakerd.s3.amazonaws.com/presentations/3b08ab8f117b4696ba0f74aaedc91515/slide_0.jpg)](https://speakerdeck.com/sksat/teleka-dot-suwozhi-eruji-shu)
+
+- さくらのマイクロコミュニティ マイクラサーバ管理者の会 #2
+[![slide_page_0](https://files.speakerdeck.com/presentations/5b91a59141ae403580dbee3738f8a549/slide_0.jpg)](https://speakerdeck.com/sksat/mo-guo-falsesabaguan-li-zhe-yo-zi-dong-hua-seyo)
+
 ## License
 MIT. See [LICENSE](./LICENSE) for more details.
