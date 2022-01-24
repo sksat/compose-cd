@@ -8,8 +8,26 @@
 ![code size](https://img.shields.io/github/languages/code-size/sksat/compose-cd)
 Continuous Deployment for docker-compose
 
+## Install
 ```sh
 $ wget https://github.com/sksat/compose-cd/releases/latest/download/compose-cd
 $ ./compose-cd install
-$ compose-cd update     # update
+    --search-root "/srv"
+    --git-pull-user <user for `git pull`>
+    --discord-webhook "https://discord.com/api/webhooks/*****"
 ```
+
+## Dependencies
+- `bash`
+- `find`
+- `getopt`
+- `git`
+- `curl`
+- `jq`
+- `sudo`
+- `docker`
+- `docker-compose`
+- `systemd`
+
+## License
+MIT. See [LICENSE](./LICENSE) for more details.
