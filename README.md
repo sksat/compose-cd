@@ -10,7 +10,8 @@ Continuous Deployment for docker-compose
 
 ## Install
 ```sh
-$ wget https://github.com/sksat/compose-cd/releases/latest/download/compose-cd
+$ wget https://github.com/sksat/compose-cd/releases/latest/download/compose-cd.tar.zst
+$ tar xvf compose-cd.tar.zst
 $ ./compose-cd install
     --search-root "/srv"
     --git-pull-user <user for `git pull`>
