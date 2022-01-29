@@ -208,7 +208,7 @@ function update_repo() {
 
 	if "$UPDATE_IMAGE_BY_REPO"; then
 		notify "pull image by repo..."
-		docker-compose pull
+		docker-compose pull --quiet
 	fi
 
 	# check apply-list
@@ -308,7 +308,7 @@ function update_image() {
 
 	echo "pull start"
 	notify "update image: ${local_img} ===> ${remote_img}"
-	docker-compose pull
+	docker-compose pull --quiet
 	echo "[$project:update image] done"
 }
 
