@@ -223,7 +223,7 @@ $(cat .compose-apply)"
 	apply_list_expand=""
 	for a in $apply_list; do
 		local expand
-		expand=$(ls "$a")
+		expand=$(find "$a")
 		apply_list_expand="${apply_list_expand}
 ${expand}"
 	done
@@ -231,8 +231,6 @@ ${expand}"
 	is_restart=false
 	set -f
 	for a in $apply_list_expand; do
-		#notify "check: $a"
-
 		if echo "$a" | grep -q '\*'; then
 			notify "error: remain wildcard"
 			return 2
@@ -240,6 +238,7 @@ ${expand}"
 
 		# non top-level .compose-cd(monorepo): #30
 		a="$(git rev-parse --show-prefix)${a}"
+		# echo "check: $a"
 
 		# exact match
 		if git diff --name-only "${local_commit}" | grep "^${a}$"; then
