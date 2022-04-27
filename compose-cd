@@ -171,6 +171,11 @@ function get_remote_image() {
 	echo "${manifest}" | jq -r '.config.digest'
 }
 
+function git(){
+	# shellcheck disable=SC2153
+	sudo -u "$GIT_PULL_USER" git "$@"
+}
+
 # require: GIT_PULL_USER
 function update_repo() {
 	local branch
@@ -205,8 +210,7 @@ function update_repo() {
 	remote_commit_link="[$remote_commit]($(git remote get-url origin)/commit/${remote_commit})"
 	notify "local(${local_commit_link}) -> remote(${remote_commit_link})"
 
-	# shellcheck disable=SC2153
-	sudo -u "$GIT_PULL_USER" git pull origin "$branch"
+	git pull origin "$branch"
 
 	if "$UPDATE_IMAGE_BY_REPO"; then
 		notify "pull image by repo..."
