@@ -446,6 +446,11 @@ function foreach_project() {
 			compose_log echo "error: SEARCH_ROOT(${search_root}) not found"
 			exit 1
 		}
+		if [ -e compose-cd.lock ]; then
+			compose_log echo "warn: lock file exists"
+			exit 0
+		fi
+		touch compose-cd.lock
 		cfgs=$(find . -maxdepth 5 -type f -name '.compose-cd')
 		for c in $cfgs; do
 			local proj
@@ -460,6 +465,7 @@ function foreach_project() {
 				eval "$1 $proj"
 			)
 		done
+		rm compose-cd.lock
 	)
 }
 
