@@ -100,10 +100,10 @@ function load_global_config() {
 
 	# version compatibility check
 	if [ "${COMPOSE_CD_VER_MAJOR}" != "${VER_MAJOR}" ]; then
-		notify "major version mismatch!!!: ${COMPOSE_CD_VER_MAJOR} != ${VER_MAJOR}" "[warn] "
+		compose_log notify "major version mismatch!!!: ${COMPOSE_CD_VER_MAJOR} != ${VER_MAJOR}" "[warn] "
 	fi
 	if [ "${COMPOSE_CD_VER_MINOR}" != "${VER_MINOR}" ]; then
-		notify "minor version mismatch!!!: ${COMPOSE_CD_VER_MINOR} != ${VER_MINOR}" "[warn] "
+		compose_log notify "minor version mismatch!!!: ${COMPOSE_CD_VER_MINOR} != ${VER_MINOR}" "[warn] "
 	fi
 }
 
@@ -135,14 +135,14 @@ function load_config() {
 }
 
 function service_up() {
-	notify "starting service..."
+	compose_log notify "starting service..."
 	docker-compose up -d 2>/dev/null
-	notify "service is up!"
+	compose_log notify "service is up!"
 }
 
 function service_down() {
 	docker-compose down 2>/dev/null
-	notify "service is down"
+	compose_log notify "service is down"
 }
 
 function get_remote_image() {
@@ -221,7 +221,7 @@ function update_repo() {
 	remote_commit=$(git ls-remote origin "${branch}" | awk '{print $1}')
 
 	if [ -z "$remote_commit" ]; then
-		notify "error: could not get remote commit"
+		compose_log notify "error: could not get remote commit"
 		echo "branch: ${branch}"
 		return 2
 	fi
@@ -237,12 +237,12 @@ function update_repo() {
 	local remote_commit_link
 	local_commit_link="[$local_commit]($(git remote get-url origin)/commit/${local_commit})"
 	remote_commit_link="[$remote_commit]($(git remote get-url origin)/commit/${remote_commit})"
-	notify "local(${local_commit_link}) -> remote(${remote_commit_link})"
+	compose_log notify "local(${local_commit_link}) -> remote(${remote_commit_link})"
 
 	git pull origin "$branch"
 
 	if "$UPDATE_IMAGE_BY_REPO"; then
-		notify "pull image by repo..."
+		compose_log notify "pull image by repo..."
 		docker-compose pull --quiet
 	fi
 
@@ -265,7 +265,7 @@ ${expand}"
 	set -f
 	for a in $apply_list_expand; do
 		if echo "$a" | grep -q '\*'; then
-			notify "error: remain wildcard"
+			compose_log notify "error: remain wildcard"
 			return 2
 		fi
 
@@ -276,13 +276,13 @@ ${expand}"
 		# exact match
 		if git diff --name-only "${local_commit}" | grep "^${a}$"; then
 			is_restart=true
-			notify "apply: $a"
+			compose_log notify "apply: $a"
 			continue
 		fi
 	done
 
 	if ! $is_restart; then
-		notify "skip restart: outside of .compose-apply"
+		compose_log notify "skip restart: outside of .compose-apply"
 		return 1
 	fi
 }
@@ -317,7 +317,7 @@ function update_image() {
 
 	local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
 	if [ "$local_img" = "" ]; then
-		notify "error: local image is null!" ""
+		compose_log notify "error: local image is null!" ""
 		docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}'
 		return 2
 	fi
@@ -327,7 +327,7 @@ function update_image() {
 
 	echo "remote_img_id: ${remote_img_id}"
 	if echo "${remote_img}" | grep -q 'null' || [ "$remote_img_id" = "" ]; then
-		notify "error: remote image is null!" ""
+		compose_log notify "error: remote image is null!" ""
 		echo "registry: ${REGISTRY}"
 		echo "image: ${IMAGE}"
 		echo "tag: ${img_tag}"
@@ -341,7 +341,7 @@ function update_image() {
 	fi
 
 	echo "pull start"
-	notify "update image: ${local_img} ===> ${remote_img}"
+	compose_log notify "update image: ${local_img} ===> ${remote_img}"
 	docker-compose pull --quiet
 	echo "[$project:update image] done"
 }
@@ -392,7 +392,7 @@ function project_update() {
 	# before script
 	if [ -n "${before_script}" ]; then
 		if ! bash -c "${before_script}"; then
-			notify "skip restart: before script exit with $?"
+			compose_log notify "skip restart: before script exit with $?"
 			return
 		fi
 	fi
@@ -518,7 +518,7 @@ DISCORD_WEBHOOK="${discord_webhook}"
 EOS
 
 	load_global_config
-	notify "notify test" "[test] "
+	compose_log notify "notify test" "[test] "
 
 	cp ./compose-cd /usr/bin/compose-cd
 	cp ./compose-cd.service /etc/systemd/system/
