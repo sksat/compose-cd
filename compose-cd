@@ -129,6 +129,13 @@ function load_config() {
 
 	if [ -z ${RESTART_WITH_BUILD+x} ]; then RESTART_WITH_BUILD=false; fi
 
+	if [ -z ${RESTRICT_HOSTNAME_PATTERN+x} ]; then
+		if ! expr match "$(hostname)" "${RESTRICT_HOSTNAME_PATTERN}" > /dev/null; then
+			# restricted but not match
+			ret=1   # skip update
+		fi
+	fi
+
 	if "$UPDATE_REPO_ONLY" && "$UPDATE_IMAGE_ONLY"; then
 		compose_log echo "UPDATE_REPO_ONLY and UPDATE_IMAGE_ONLY are true. This is something wrong."
 		exit 1
