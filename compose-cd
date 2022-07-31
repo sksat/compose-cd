@@ -122,6 +122,8 @@ function load_config() {
 
 	if [ -z ${PRIVATE_IMAGE+x} ]; then PRIVATE_IMAGE=false; fi
 
+	if [ -z ${REPO_GIT_REMOTE+x} ]; then REPO_GIT_REMOTE="origin"; fi
+
 	if "$UPDATE_REPO_ONLY" && "$UPDATE_IMAGE_ONLY"; then
 		compose_log echo "UPDATE_REPO_ONLY and UPDATE_IMAGE_ONLY are true. This is something wrong."
 		exit 1
@@ -215,7 +217,7 @@ function update_repo() {
 	local is_restart
 	local git_remote
 
-	git_remote="origin"
+	git_remote="${REPO_GIT_REMOTE}"
 
 	compose_log echo -n "[$project:update repository] "
 
