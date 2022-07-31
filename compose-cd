@@ -70,6 +70,23 @@ function notify_test() {
 	notify "test"
 }
 
+function compose_log() {
+	local log_level
+	local msg
+
+	log_level="$1"
+	msg="$2"
+
+	case $log_level in
+		"echo")
+			echo "$msg"
+			;;
+		"notify")
+			notify "$msg"
+			;;
+	esac
+}
+
 function load_global_config() {
 	if [ ! -e "/etc/compose-cd/config" ]; then
 		echo "/etc/compose-cd/config not found"
