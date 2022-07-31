@@ -213,12 +213,15 @@ function update_repo() {
 	local apply_list
 	local apply_list_expand
 	local is_restart
+	local git_remote
+
+	git_remote="origin"
 
 	compose_log echo -n "[$project:update repository] "
 
 	branch=$(git symbolic-ref --short HEAD)
 	local_commit=$(git rev-parse HEAD)
-	remote_commit=$(git ls-remote origin "${branch}" | awk '{print $1}')
+	remote_commit=$(git ls-remote "${git_remote}" "${branch}" | awk '{print $1}')
 
 	if [ -z "$remote_commit" ]; then
 		compose_log notify "error: could not get remote commit"
@@ -235,11 +238,11 @@ function update_repo() {
 	compose_log echo "pull start"
 	local local_commit_link
 	local remote_commit_link
-	local_commit_link="[$local_commit]($(git remote get-url origin)/commit/${local_commit})"
-	remote_commit_link="[$remote_commit]($(git remote get-url origin)/commit/${remote_commit})"
+	local_commit_link="[$local_commit]($(git remote get-url "${git_remote}")/commit/${local_commit})"
+	remote_commit_link="[$remote_commit]($(git remote get-url "${git_remote}")/commit/${remote_commit})"
 	compose_log notify "local(${local_commit_link}) -> remote(${remote_commit_link})"
 
-	git pull origin "$branch"
+	git pull "${git_remote}" "$branch"
 
 	if "$UPDATE_IMAGE_BY_REPO"; then
 		compose_log notify "pull image by repo..."
