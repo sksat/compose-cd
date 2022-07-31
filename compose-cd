@@ -108,6 +108,9 @@ function load_global_config() {
 }
 
 function load_config() {
+	local ret
+	ret=0
+
 	compose_log echo -n "[$proj:load config] "
 	if [ ! -e ./.compose-cd ]; then
 		compose_log echo "config file not found"
@@ -126,6 +129,13 @@ function load_config() {
 
 	if [ -z ${RESTART_WITH_BUILD+x} ]; then RESTART_WITH_BUILD=false; fi
 
+	if [ -v RESTRICT_HOSTNAME_PATTERN ]; then
+		if ! expr "$(hostname)" : "${RESTRICT_HOSTNAME_PATTERN}" >/dev/null; then
+			# restricted but not match
+			ret=1 # skip update
+		fi
+	fi
+
 	if "$UPDATE_REPO_ONLY" && "$UPDATE_IMAGE_ONLY"; then
 		compose_log echo "UPDATE_REPO_ONLY and UPDATE_IMAGE_ONLY are true. This is something wrong."
 		exit 1
@@ -136,6 +146,7 @@ function load_config() {
 	fi
 
 	compose_log echo "ok"
+	return $ret
 }
 
 function service_up() {
@@ -361,6 +372,7 @@ function update_image() {
 
 function project_update() {
 	local proj=$1
+	local rc
 	local rr
 	local ri
 
@@ -368,6 +380,12 @@ function project_update() {
 	local after_script
 
 	load_config
+	rc=$?
+	if [ $rc = 1 ]; then
+		# skip update
+		compose_log echo "skip update"
+		return
+	fi
 
 	rr=1
 	ri=1
