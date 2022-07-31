@@ -42,9 +42,10 @@ function notify_discord() {
 		-d '{"username":"'"${username}"'","content":'"\"$msg\"}" "$webhook"
 }
 
-# require: DISCORD_WEBHOOK
+# require: DISCORD_WEBHOOK, NOTIFY_USERNAME(optional)
 function notify() {
 	local msg
+	local username
 
 	if [ -z ${2+x} ]; then
 		msg="[${project}] $1"
@@ -54,8 +55,14 @@ function notify() {
 
 	echo "$msg"
 
+	# notify username(default: compose-cd)
+	username="compose-cd"
+	if [ -n "${NOTIFY_USERNAME+x}" ]; then
+		username="${NOTIFY_USERNAME}"
+	fi
+
 	if [ -n "${DISCORD_WEBHOOK+x}" ]; then
-		notify_discord "${DISCORD_WEBHOOK}" "$msg" "compose-cd"
+		notify_discord "${DISCORD_WEBHOOK}" "$msg" "$username"
 	fi
 }
 
