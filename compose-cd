@@ -33,11 +33,13 @@ function usage() {
 function notify_discord() {
 	local webhook
 	local msg
+	local username
 
 	webhook="$1"
 	msg="$2"
+	username="$3"
 	curl --silent -H "Accept: application/json" -H "Content-type: application/json" -X POST \
-		-d '{"username":"compose-cd","content":'"\"$msg\"}" "$webhook"
+		-d '{"username":"'"${username}"'","content":'"\"$msg\"}" "$webhook"
 }
 
 # require: DISCORD_WEBHOOK
@@ -53,7 +55,7 @@ function notify() {
 	echo "$msg"
 
 	if [ -n "${DISCORD_WEBHOOK+x}" ]; then
-		notify_discord "${DISCORD_WEBHOOK}" "$msg"
+		notify_discord "${DISCORD_WEBHOOK}" "$msg" "compose-cd"
 	fi
 }
 
