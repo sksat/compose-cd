@@ -77,6 +77,7 @@ function compose_log() {
 	log_level="$1"
 	shift
 
+	# shellcheck disable=SC2116
 	msg=$(echo "$@")
 
 	case $log_level in
