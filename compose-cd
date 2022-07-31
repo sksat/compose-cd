@@ -33,16 +33,19 @@ function usage() {
 function notify_discord() {
 	local webhook
 	local msg
+	local username
 
 	webhook="$1"
 	msg="$2"
+	username="$3"
 	curl --silent -H "Accept: application/json" -H "Content-type: application/json" -X POST \
-		-d '{"username":"compose-cd","content":'"\"$msg\"}" "$webhook"
+		-d '{"username":"'"${username}"'","content":'"\"$msg\"}" "$webhook"
 }
 
-# require: DISCORD_WEBHOOK
+# require: DISCORD_WEBHOOK, NOTIFY_USERNAME(optional)
 function notify() {
 	local msg
+	local username
 
 	if [ -z ${2+x} ]; then
 		msg="[${project}] $1"
@@ -52,8 +55,14 @@ function notify() {
 
 	echo "$msg"
 
+	# notify username(default: compose-cd)
+	username="compose-cd"
+	if [ -n "${NOTIFY_USERNAME+x}" ]; then
+		username="${NOTIFY_USERNAME}"
+	fi
+
 	if [ -n "${DISCORD_WEBHOOK+x}" ]; then
-		notify_discord "${DISCORD_WEBHOOK}" "$msg"
+		notify_discord "${DISCORD_WEBHOOK}" "$msg" "$username"
 	fi
 }
 
