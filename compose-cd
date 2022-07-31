@@ -70,6 +70,26 @@ function notify_test() {
 	notify "test"
 }
 
+function compose_log() {
+	local log_level
+	local msg
+
+	log_level="$1"
+	shift
+
+	# shellcheck disable=SC2116
+	msg=$(echo "$@")
+
+	case $log_level in
+		"echo")
+			echo "$@"
+			;;
+		"notify")
+			notify "$msg"
+			;;
+	esac
+}
+
 function load_global_config() {
 	if [ ! -e "/etc/compose-cd/config" ]; then
 		echo "/etc/compose-cd/config not found"
@@ -80,17 +100,17 @@ function load_global_config() {
 
 	# version compatibility check
 	if [ "${COMPOSE_CD_VER_MAJOR}" != "${VER_MAJOR}" ]; then
-		notify "major version mismatch!!!: ${COMPOSE_CD_VER_MAJOR} != ${VER_MAJOR}" "[warn] "
+		compose_log notify "major version mismatch!!!: ${COMPOSE_CD_VER_MAJOR} != ${VER_MAJOR}" "[warn] "
 	fi
 	if [ "${COMPOSE_CD_VER_MINOR}" != "${VER_MINOR}" ]; then
-		notify "minor version mismatch!!!: ${COMPOSE_CD_VER_MINOR} != ${VER_MINOR}" "[warn] "
+		compose_log notify "minor version mismatch!!!: ${COMPOSE_CD_VER_MINOR} != ${VER_MINOR}" "[warn] "
 	fi
 }
 
 function load_config() {
-	echo -n "[$proj:load config] "
+	compose_log echo -n "[$proj:load config] "
 	if [ ! -e ./.compose-cd ]; then
-		echo "config file not found"
+		compose_log echo "config file not found"
 		return
 	fi
 	# shellcheck disable=SC1091
@@ -103,26 +123,26 @@ function load_config() {
 	if [ -z ${PRIVATE_IMAGE+x} ]; then PRIVATE_IMAGE=false; fi
 
 	if "$UPDATE_REPO_ONLY" && "$UPDATE_IMAGE_ONLY"; then
-		echo "UPDATE_REPO_ONLY and UPDATE_IMAGE_ONLY are true. This is something wrong."
+		compose_log echo "UPDATE_REPO_ONLY and UPDATE_IMAGE_ONLY are true. This is something wrong."
 		exit 1
 	fi
 	if "$UPDATE_IMAGE_ONLY" && "$UPDATE_IMAGE_BY_REPO"; then
-		echo "UPDATE_IMAGE_ONLY and UPDATE_IMAGE_BY_REPO are true. This is something wrong."
+		compose_log echo "UPDATE_IMAGE_ONLY and UPDATE_IMAGE_BY_REPO are true. This is something wrong."
 		exit 1
 	fi
 
-	echo "ok"
+	compose_log echo "ok"
 }
 
 function service_up() {
-	notify "starting service..."
+	compose_log notify "starting service..."
 	docker-compose up -d 2>/dev/null
-	notify "service is up!"
+	compose_log notify "service is up!"
 }
 
 function service_down() {
 	docker-compose down 2>/dev/null
-	notify "service is down"
+	compose_log notify "service is down"
 }
 
 function get_remote_image() {
@@ -166,18 +186,18 @@ function get_remote_image() {
 
 	#echo $registry_token
 
-	echo -n "${tag} "
+	compose_log echo -n "${tag} "
 	manifest=$(curl --silent \
 		--header "Accept: application/vnd.docker.distribution.manifest.v2+json" \
 		--header "Authorization: Bearer ${registry_token}" \
 		"https://${registry}/v2/${image}/manifests/${tag}")
 
 	if echo "${manifest}" | grep 'errors'; then
-		echo "${manifest}" 1>&2
+		compose_log echo "${manifest}" 1>&2
 		exit 1
 	fi
 
-	echo "${manifest}" | jq -r '.config.digest'
+	compose_log echo "${manifest}" | jq -r '.config.digest'
 }
 
 function git() {
@@ -194,35 +214,35 @@ function update_repo() {
 	local apply_list_expand
 	local is_restart
 
-	echo -n "[$project:update repository] "
+	compose_log echo -n "[$project:update repository] "
 
 	branch=$(git symbolic-ref --short HEAD)
 	local_commit=$(git rev-parse HEAD)
 	remote_commit=$(git ls-remote origin "${branch}" | awk '{print $1}')
 
 	if [ -z "$remote_commit" ]; then
-		notify "error: could not get remote commit"
-		echo "branch: ${branch}"
+		compose_log notify "error: could not get remote commit"
+		compose_log echo "branch: ${branch}"
 		return 2
 	fi
 
 	if [[ $local_commit = "$remote_commit" ]]; then
 		# no update
-		echo "pass"
+		compose_log echo "pass"
 		return 1
 	fi
 
-	echo "pull start"
+	compose_log echo "pull start"
 	local local_commit_link
 	local remote_commit_link
 	local_commit_link="[$local_commit]($(git remote get-url origin)/commit/${local_commit})"
 	remote_commit_link="[$remote_commit]($(git remote get-url origin)/commit/${remote_commit})"
-	notify "local(${local_commit_link}) -> remote(${remote_commit_link})"
+	compose_log notify "local(${local_commit_link}) -> remote(${remote_commit_link})"
 
 	git pull origin "$branch"
 
 	if "$UPDATE_IMAGE_BY_REPO"; then
-		notify "pull image by repo..."
+		compose_log notify "pull image by repo..."
 		docker-compose pull --quiet
 	fi
 
@@ -245,7 +265,7 @@ ${expand}"
 	set -f
 	for a in $apply_list_expand; do
 		if echo "$a" | grep -q '\*'; then
-			notify "error: remain wildcard"
+			compose_log notify "error: remain wildcard"
 			return 2
 		fi
 
@@ -256,13 +276,13 @@ ${expand}"
 		# exact match
 		if git diff --name-only "${local_commit}" | grep "^${a}$"; then
 			is_restart=true
-			notify "apply: $a"
+			compose_log notify "apply: $a"
 			continue
 		fi
 	done
 
 	if ! $is_restart; then
-		notify "skip restart: outside of .compose-apply"
+		compose_log notify "skip restart: outside of .compose-apply"
 		return 1
 	fi
 }
@@ -274,30 +294,30 @@ function update_image() {
 	local remote_img
 	local remote_img_id
 
-	echo -n "[$project:update image] "
+	compose_log echo -n "[$project:update image] "
 
 	if [ -z ${REGISTRY+x} ]; then
-		echo "error: REGISTRY is not set"
+		compose_log echo "error: REGISTRY is not set"
 		return
 	fi
 	if [ -z ${IMAGE+x} ]; then
-		echo "error: REGISTRY is not set"
+		compose_log echo "error: REGISTRY is not set"
 		return
 	fi
 	img_location="${REGISTRY}/${IMAGE}" # like ghcr.io/sksat/kuso-subdomain-adder
 
 	if [ -z ${IMG_TAG+x} ]; then
-		echo "warning: IMG_TAG is not set"
+		compose_log echo "warning: IMG_TAG is not set"
 		img_tag="main"
 
-		echo -n "[$project:update image] "
+		compose_log echo -n "[$project:update image] "
 	else
 		img_tag="${IMG_TAG}"
 	fi
 
 	local_img=$(docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}' | grep "$img_tag")
 	if [ "$local_img" = "" ]; then
-		notify "error: local image is null!" ""
+		compose_log notify "error: local image is null!" ""
 		docker images --no-trunc --digests "${img_location}" --format '{{.Tag}} {{.ID}}'
 		return 2
 	fi
@@ -305,25 +325,25 @@ function update_image() {
 	remote_img=$(get_remote_image "${REGISTRY}" "${IMAGE}" "${img_tag}")
 	remote_img_id=$(cut -d' ' -f 2 <<<"${remote_img}")
 
-	echo "remote_img_id: ${remote_img_id}"
+	compose_log echo "remote_img_id: ${remote_img_id}"
 	if echo "${remote_img}" | grep -q 'null' || [ "$remote_img_id" = "" ]; then
-		notify "error: remote image is null!" ""
-		echo "registry: ${REGISTRY}"
-		echo "image: ${IMAGE}"
-		echo "tag: ${img_tag}"
+		compose_log notify "error: remote image is null!" ""
+		compose_log echo "registry: ${REGISTRY}"
+		compose_log echo "image: ${IMAGE}"
+		compose_log echo "tag: ${img_tag}"
 		return 2
 	fi
 
 	if [[ $local_img = "$remote_img" ]]; then
 		# no update
-		echo "pass"
+		compose_log echo "pass"
 		return 1
 	fi
 
-	echo "pull start"
-	notify "update image: ${local_img} ===> ${remote_img}"
+	compose_log echo "pull start"
+	compose_log notify "update image: ${local_img} ===> ${remote_img}"
 	docker-compose pull --quiet
-	echo "[$project:update image] done"
+	compose_log echo "[$project:update image] done"
 }
 
 function project_update() {
@@ -349,7 +369,7 @@ function project_update() {
 
 	# no update
 	if [ $rr = 1 ] && [ $ri = 1 ]; then
-		echo "no update"
+		compose_log echo "no update"
 		return
 	fi
 
@@ -372,14 +392,14 @@ function project_update() {
 	# before script
 	if [ -n "${before_script}" ]; then
 		if ! bash -c "${before_script}"; then
-			notify "skip restart: before script exit with $?"
+			compose_log notify "skip restart: before script exit with $?"
 			return
 		fi
 	fi
 
 	# todo: running check
 
-	echo "restart service..."
+	compose_log echo "restart service..."
 	service_down
 	service_up
 
@@ -395,13 +415,13 @@ function project_status() {
 
 	proj=$1
 
-	echo -n "[$proj:status] "
+	compose_log echo -n "[$proj:status] "
 	services=$(docker-compose ps -q)
 
 	if [ -n "$services" ]; then
-		echo "up"
+		compose_log echo "up"
 	else
-		echo "down"
+		compose_log echo "down"
 	fi
 }
 
@@ -410,7 +430,7 @@ function foreach_project() {
 	local cfgs
 
 	if [ -z ${SEARCH_ROOT+x} ]; then
-		echo "error: SEARCH_ROOT is not set"
+		compose_log echo "error: SEARCH_ROOT is not set"
 		return
 	fi
 	search_root=${SEARCH_ROOT}
@@ -418,7 +438,7 @@ function foreach_project() {
 	# execute in subshell
 	(
 		cd "${search_root}" || {
-			echo "error: SEARCH_ROOT(${search_root}) not found"
+			compose_log echo "error: SEARCH_ROOT(${search_root}) not found"
 			exit 1
 		}
 		cfgs=$(find . -maxdepth 5 -type f -name '.compose-cd')
@@ -429,7 +449,7 @@ function foreach_project() {
 
 			(
 				cd "$proj" || {
-					echo "[$proj] error: project not fouund"
+					compose_log echo "[$proj] error: project not fouund"
 					exit 1
 				}
 				eval "$1 $proj"
@@ -498,7 +518,7 @@ DISCORD_WEBHOOK="${discord_webhook}"
 EOS
 
 	load_global_config
-	notify "notify test" "[test] "
+	compose_log notify "notify test" "[test] "
 
 	cp ./compose-cd /usr/bin/compose-cd
 	cp ./compose-cd.service /etc/systemd/system/
@@ -529,21 +549,21 @@ function uninstall() {
 }
 
 function check_status() {
-	echo "check status"
+	compose_log echo "check status"
 
 	load_global_config
 	foreach_project project_status
 }
 
 function update() {
-	echo "update"
+	compose_log echo "update"
 
 	load_global_config
 	foreach_project project_update
 }
 
 function cleanup() {
-	echo "cleanup: container images"
+	compose_log echo "cleanup: container images"
 	docker image prune -a -f
 }
 
