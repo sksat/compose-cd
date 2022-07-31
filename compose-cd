@@ -124,6 +124,8 @@ function load_config() {
 
 	if [ -z ${REPO_GIT_REMOTE+x} ]; then REPO_GIT_REMOTE="origin"; fi
 
+	if [ -z ${RESTART_WITH_BUILD+x} ]; then RESTART_WITH_BUILD=false; fi
+
 	if "$UPDATE_REPO_ONLY" && "$UPDATE_IMAGE_ONLY"; then
 		compose_log echo "UPDATE_REPO_ONLY and UPDATE_IMAGE_ONLY are true. This is something wrong."
 		exit 1
@@ -138,7 +140,13 @@ function load_config() {
 
 function service_up() {
 	compose_log notify "starting service..."
-	docker-compose up -d 2>/dev/null
+	if ! "$RESTART_WITH_BUILD"; then
+		docker-compose up -d 2>/dev/null
+	else
+		compose_log notify "start build..."
+		docker-compose up -d --build 2>/dev/null
+		compose_log notify "finish build"
+	fi
 	compose_log notify "service is up!"
 }
 
