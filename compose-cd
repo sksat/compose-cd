@@ -132,7 +132,7 @@ function load_config() {
 	if [ -z ${RESTRICT_HOSTNAME_PATTERN+x} ]; then
 		if ! expr match "$(hostname)" "${RESTRICT_HOSTNAME_PATTERN}" >/dev/null; then
 			# restricted but not match
-			ret=1   # skip update
+			ret=1 # skip update
 		fi
 	fi
 
