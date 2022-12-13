@@ -42,7 +42,7 @@ jobs:
 
       - name: shellcheck(github-pr-review)
         if: ${{ github.event_name }} == 'pull_request'
-        uses: reviewdog/action-shellcheck@v1.15.0
+        uses: reviewdog/action-shellcheck@v1.16.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           filter_mode: added
@@ -54,7 +54,7 @@ jobs:
 
       - name: shellcheck(github-pr-check)
         if: ${{ github.event_name }} == 'pull_request'
-        uses: reviewdog/action-shellcheck@v1.15.0
+        uses: reviewdog/action-shellcheck@v1.16.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           filter_mode: nofilter
@@ -65,7 +65,7 @@ jobs:
             compose-cd
 
       - name: shellcheck(github-check)
-        uses: reviewdog/action-shellcheck@v1.15.0
+        uses: reviewdog/action-shellcheck@v1.16.0
         if: github.event_name == 'push'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
