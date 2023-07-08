@@ -35,4 +35,4 @@ PRIVATE_IMAGE=false
 check_multi_registry "sksat/archbot-rs" "main"
 check_multi_registry "sksat/mc.yohane.su" "main"
 check_multi_registry "sksat/papermc-docker" "main"
-check_multi_registry "sksat/kuso-subdomain-adder" "master"
+check_multi_registry "sksat/cargo-chef-docker" "1.70.0-bullseye"
