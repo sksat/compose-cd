@@ -56,7 +56,7 @@ function notify() {
 	local username
 
 	if [ -z ${2+x} ]; then
-		if [ -z ${project} ]; then
+		if [ -z "${project}" ]; then
 			msg="$1"
 		else
 			msg="[${project}] $1"

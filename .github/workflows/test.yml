@@ -2,9 +2,9 @@ name: test
 
 on:
   push:
-    paths:
-      - 'compose-cd'
-      - 'test/**'
+    branches:
+      - main
+  pull_request:
 
 jobs:
   test:
