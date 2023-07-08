@@ -10,6 +10,12 @@ COMPOSE_CD_VER_PRE=''
 #	echo "[compose-mock]:$p $1 $2"
 #}
 
+function compose() {
+	#echo $@
+	# shellcheck disable=SC2068
+	docker-compose $@
+}
+
 function version() {
 	local compose_cd_ver
 
@@ -152,17 +158,17 @@ function load_config() {
 function service_up() {
 	compose_log notify "starting service..."
 	if ! "$RESTART_WITH_BUILD"; then
-		docker-compose up -d 2>/dev/null
+		compose up -d 2>/dev/null
 	else
 		compose_log notify "start build..."
-		docker-compose up -d --build 2>/dev/null
+		compose up -d --build 2>/dev/null
 		compose_log notify "finish build"
 	fi
 	compose_log notify "service is up!"
 }
 
 function service_down() {
-	docker-compose down 2>/dev/null
+	compose down 2>/dev/null
 	compose_log notify "service is down"
 }
 
@@ -267,7 +273,7 @@ function update_repo() {
 
 	if "$UPDATE_IMAGE_BY_REPO"; then
 		compose_log notify "pull image by repo..."
-		docker-compose pull --quiet
+		compose pull --quiet
 	fi
 
 	# check apply-list
@@ -366,7 +372,7 @@ function update_image() {
 
 	compose_log echo "pull start"
 	compose_log notify "update image: ${local_img} ===> ${remote_img}"
-	docker-compose pull --quiet
+	compose pull --quiet
 	compose_log echo "[$project:update image] done"
 }
 
@@ -447,7 +453,7 @@ function project_status() {
 	proj=$1
 
 	compose_log echo -n "[$proj:status] "
-	services=$(docker-compose ps -q)
+	services=$(compose ps -q)
 
 	if [ -n "$services" ]; then
 		compose_log echo "up"
