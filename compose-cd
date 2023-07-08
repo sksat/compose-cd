@@ -11,9 +11,11 @@ COMPOSE_CD_VER_PRE=''
 #}
 
 function compose() {
-	#echo $@
 	# shellcheck disable=SC2068
-	docker-compose $@
+	#echo $COMPOSE_IMPL $@
+
+	# shellcheck disable=SC2068
+	$COMPOSE_IMPL $@
 }
 
 function version() {
@@ -110,6 +112,11 @@ function load_global_config() {
 	fi
 	if [ "${COMPOSE_CD_VER_MINOR}" != "${VER_MINOR}" ]; then
 		compose_log notify "minor version mismatch!!!: ${COMPOSE_CD_VER_MINOR} != ${VER_MINOR}" "[warn] "
+	fi
+
+	# set default compose implementation
+	if [ -z ${COMPOSE_IMPL+x} ]; then
+		COMPOSE_IMPL="docker-compose"
 	fi
 }
 
