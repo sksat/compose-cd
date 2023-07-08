@@ -56,7 +56,11 @@ function notify() {
 	local username
 
 	if [ -z ${2+x} ]; then
-		msg="[${project}] $1"
+		if [ -z ${project} ]; then
+			msg="$1"
+		else
+			msg="[${project}] $1"
+		fi
 	else
 		msg="$2$1"
 	fi
@@ -108,10 +112,10 @@ function load_global_config() {
 
 	# version compatibility check
 	if [ "${COMPOSE_CD_VER_MAJOR}" != "${VER_MAJOR}" ]; then
-		compose_log notify "major version mismatch!!!: ${COMPOSE_CD_VER_MAJOR} != ${VER_MAJOR}" "[warn] "
+		compose_log notify "[warn] major version mismatch!!!: ${COMPOSE_CD_VER_MAJOR} != ${VER_MAJOR}"
 	fi
 	if [ "${COMPOSE_CD_VER_MINOR}" != "${VER_MINOR}" ]; then
-		compose_log notify "minor version mismatch!!!: ${COMPOSE_CD_VER_MINOR} != ${VER_MINOR}" "[warn] "
+		compose_log notify "[warn] minor version mismatch!!!: ${COMPOSE_CD_VER_MINOR} != ${VER_MINOR}"
 	fi
 
 	# set default compose implementation
