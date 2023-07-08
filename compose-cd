@@ -116,7 +116,7 @@ function load_global_config() {
 
 	# set default compose implementation
 	if [ -z ${COMPOSE_IMPL+x} ]; then
-		COMPOSE_IMPL="docker-compose"
+		COMPOSE_IMPL="docker compose"
 	fi
 }
 
