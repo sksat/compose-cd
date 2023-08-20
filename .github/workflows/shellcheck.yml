@@ -32,7 +32,7 @@ jobs:
 
       - name: shellcheck suggest
         if: ${{ github.event_name }} == 'pull_request'
-        uses: reviewdog/action-suggester@v1.7.1
+        uses: reviewdog/action-suggester@v1.7.4
         with:
           tool_name: shellcheck
 
