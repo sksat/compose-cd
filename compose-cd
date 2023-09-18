@@ -2,7 +2,7 @@
 
 COMPOSE_CD_VER_MAJOR='0'
 COMPOSE_CD_VER_MINOR='6'
-COMPOSE_CD_VER_PATCH='0'
+COMPOSE_CD_VER_PATCH='1'
 COMPOSE_CD_VER_PRE=''
 
 #function docker-compose(){
@@ -589,12 +589,13 @@ EOS
 function uninstall() {
 	echo "uninstall"
 
-	rm /usr/bin/compose-cd
-	rm -r /etc/compose-cd
-
 	systemctl stop compose-cd.timer
 	systemctl stop compose-cd.service
 	systemctl stop compose-cd-cleanup.timer
+
+	rm /usr/bin/compose-cd
+	rm -r /etc/compose-cd
+
 	rm /etc/systemd/system/compose-cd.timer
 	rm /etc/systemd/system/compose-cd.service
 	rm /etc/systemd/system/compose-cd-cleanup.timer
