@@ -21,11 +21,11 @@ function compose() {
 function version() {
 	local compose_cd_ver
 
-	compose_cd_ver="v${COMPOSE_CD_VER_MAJOR}.${COMPOSE_CD_VER_MINOR}.${COMPOSE_CD_VER_PATCH}"
+	compose_cd_ver="${COMPOSE_CD_VER_MAJOR}.${COMPOSE_CD_VER_MINOR}.${COMPOSE_CD_VER_PATCH}"
 	if [ -n "${COMPOSE_CD_VER_PRE}" ]; then
 		compose_cd_ver="${compose_cd_ver}-${COMPOSE_CD_VER_PRE}"
 	fi
-	echo "version: ${compose_cd_ver}"
+	echo "${compose_cd_ver}"
 }
 
 function usage() {
