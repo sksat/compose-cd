@@ -97,6 +97,27 @@ At first glance, updating this configuration may seem to be very tedious, but it
 Example:
   - https://github.com/sksat/mc.yohane.su/pull/232
 
+
+### How to inject secrets from a password manager
+
+If you are using a password manager like 1Password, you can instruct compose-cd to use an alternate command to bring up the docker-compose stack.
+
+```
+CUSTOM_UP_COMMAND=op run --env-file=.env -- docker compose up -d
+```
+
+Then within each docker-compose stack you can create .env file with your configuration values.
+
+```
+POSTGRES_SERVER="op://vault-name/coder/database/server"
+POSTGRES_DB="op://vault-name/coder/database/db"
+POSTGRES_USER="op://vault-name/coder/database/user"
+POSTGRES_USER_PW="op://vault-name/coder/database/password"
+```
+
+Following the [secrets-reference-syntax](https://developer.1password.com/docs/cli/secrets-reference-syntax/), these configuration items and secrets will be supplies whenever the docker compose stack is recreated, and the secrets never have to hit the filesystem or your monorepo (except of course in the container definition files...).
+
+
 ## Blog
 - [マイクラサーバをGitHubで運用する](https://sksat.hatenablog.com/entry/2021/08/26/015620)
 

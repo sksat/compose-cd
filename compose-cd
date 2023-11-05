@@ -133,6 +133,10 @@ function load_config() {
 		compose_log echo "config file not found"
 		return
 	fi
+
+	# Clear the CUSTOM_UP_COMMAND variable at the beginning of each iteration
+    unset CUSTOM_UP_COMMAND
+
 	# shellcheck disable=SC1091
 	source ./.compose-cd # super config system
 	if [ -z ${UPDATE_REPO_ONLY+x} ]; then UPDATE_REPO_ONLY=false; fi
@@ -162,19 +166,28 @@ function load_config() {
 		exit 1
 	fi
 
+	if "$CUSTOM_UP_COMMAND" && "$RESTART_WITH_BUILD"; then
+		compose_log echo "CUSTOM_UP_COMMAND and RESTART_WITH_BUILD are both populated. CUSTOM_UP_COMMAND overrides all other build options."
+		exit 1
+	fi
+
 	compose_log echo "ok"
 	return $ret
 }
 
 function service_up() {
 	compose_log notify "starting service..."
-	if ! "$RESTART_WITH_BUILD"; then
-		compose up -d 2>/dev/null
-	else
-		compose_log notify "start build..."
-		compose up -d --build 2>/dev/null
-		compose_log notify "finish build"
-	fi
+
+	if [ -n "${CUSTOM_UP_COMMAND}" ]; then
+            eval "$CUSTOM_UP_COMMAND"
+        else
+			if ! "$RESTART_WITH_BUILD"; then
+				compose up -d 2>/dev/null
+			else
+				compose_log notify "start build..."
+				compose up -d --build 2>/dev/null
+				compose_log notify "finish build"
+			fi
 	compose_log notify "service is up!"
 }
 
