@@ -166,7 +166,7 @@ function load_config() {
 		exit 1
 	fi
 
-	if "$CUSTOM_UP_COMMAND" && "$RESTART_WITH_BUILD"; then
+	if [ -z "${CUSTOM_UP_COMMAND+x}" ] && [ -z "${RESTART_WITH_BUILD+x}" ]; then
 		compose_log echo "CUSTOM_UP_COMMAND and RESTART_WITH_BUILD are both populated. CUSTOM_UP_COMMAND overrides all other build options."
 		exit 1
 	fi
@@ -188,6 +188,7 @@ function service_up() {
 				compose up -d --build 2>/dev/null
 				compose_log notify "finish build"
 			fi
+	fi
 	compose_log notify "service is up!"
 }
 
