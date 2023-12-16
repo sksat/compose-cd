@@ -141,6 +141,7 @@ function load_config() {
 	source ./.compose-cd # super config system
 	if [ -z ${UPDATE_REPO_ONLY+x} ]; then UPDATE_REPO_ONLY=false; fi
 	if [ -z ${UPDATE_IMAGE_ONLY+x} ]; then UPDATE_IMAGE_ONLY=false; fi
+	if [ -z ${SERVICE_UP_ONLY+x} ]; then SERVICE_UP_ONLY=false; fi
 
 	if [ -z ${UPDATE_IMAGE_BY_REPO+x} ]; then UPDATE_IMAGE_BY_REPO=false; fi
 
@@ -462,7 +463,12 @@ function project_update() {
 	# todo: running check
 
 	compose_log echo "restart service..."
-	service_down
+
+	if ! "$SERVICE_UP_ONLY"; then
+		compose_log echo "restart service..."
+		service_down
+	fi
+
 	service_up
 
 	# after script

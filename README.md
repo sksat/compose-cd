@@ -98,15 +98,32 @@ Example:
   - https://github.com/sksat/mc.yohane.su/pull/232
 
 
+### How to to not bring down containers, only run docker compose up
+
+Sometimes you don't want to bring the stack down before running docker-compose up. This allows docker-compose to decide which containers actually require restarts.
+
+If this is what you want, then add `SERVICE_UP_ONLY` to your `.compose-cd` file, like this:
+
+```
+SERVICE_UP_ONLY=true
+```
+
 ### How to inject secrets from a password manager
 
-If you are using a password manager like 1Password, you can instruct compose-cd to use an alternate command to bring up the docker-compose stack.
+If you are using a password manager like 1Password, you can instruct compose-cd to use an alternate command to bring up the docker-compose stack. 
+
+For 1Password Connect Server, install the application, then add the environment variables to the service configuration.
+Add the following to the installed service, by running `systemctl edit compose-cd`: 
 
 ```
-CUSTOM_UP_COMMAND=op run --env-file=.env -- docker compose up -d
+[Service]
+# Set environment variables related to your custom_up_command(s)
+Environment="OP_CONNECT_HOST=https://op.your.domain"
+Environment="OP_CONNECT_TOKEN=yourconnecttoken"
 ```
 
-Then within each docker-compose stack you can create .env file with your configuration values.
+
+Then within each docker-compose stack you can create op.env file with your configuration values.
 
 ```
 POSTGRES_SERVER="op://vault-name/coder/database/server"
@@ -116,6 +133,16 @@ POSTGRES_USER_PW="op://vault-name/coder/database/password"
 ```
 
 Following the [secrets-reference-syntax](https://developer.1password.com/docs/cli/secrets-reference-syntax/), these configuration items and secrets will be supplies whenever the docker compose stack is recreated, and the secrets never have to hit the filesystem or your monorepo (except of course in the container definition files...).
+
+Finally, inside of your `.compose-cd` file, specify a custom up command. When using `op`, it should look like this:
+
+```
+CUSTOM_UP_COMMAND=op run --env-file=op.env -- docker compose up -d
+```
+
+This will use op to fetch the secret references and feed it to Docker Compose. Note that the secrets are still being baked into their respective container configurations, but they will not otherwise touch the filesystem.
+
+Finally, if the secrets change, the same command will cause the containers to be rebuilt - but otherwise running `op run --env-file=op.env -- docker compose up -d` when the stack is already running will not cause any container restarts.
 
 
 ## Blog
