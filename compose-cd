@@ -522,7 +522,7 @@ function foreach_project() {
 
 			(
 				cd "$proj" || {
-					compose_log echo "[$proj] error: project not fouund"
+					compose_log echo "[$proj] error: project not found"
 					exit 1
 				}
 				eval "$1 $proj"
