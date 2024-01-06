@@ -133,10 +133,15 @@ function load_config() {
 		compose_log echo "config file not found"
 		return
 	fi
+
+	# Clear the CUSTOM_UP_COMMAND variable at the beginning of each iteration
+    unset CUSTOM_UP_COMMAND
+
 	# shellcheck disable=SC1091
 	source ./.compose-cd # super config system
 	if [ -z ${UPDATE_REPO_ONLY+x} ]; then UPDATE_REPO_ONLY=false; fi
 	if [ -z ${UPDATE_IMAGE_ONLY+x} ]; then UPDATE_IMAGE_ONLY=false; fi
+	if [ -z ${SERVICE_UP_ONLY+x} ]; then SERVICE_UP_ONLY=false; fi
 
 	if [ -z ${UPDATE_IMAGE_BY_REPO+x} ]; then UPDATE_IMAGE_BY_REPO=false; fi
 
@@ -162,18 +167,28 @@ function load_config() {
 		exit 1
 	fi
 
+	if [ -z "${CUSTOM_UP_COMMAND+x}" ] && [ -z "${RESTART_WITH_BUILD+x}" ]; then
+		compose_log echo "CUSTOM_UP_COMMAND and RESTART_WITH_BUILD are both populated. CUSTOM_UP_COMMAND overrides all other build options."
+		exit 1
+	fi
+
 	compose_log echo "ok"
 	return $ret
 }
 
 function service_up() {
 	compose_log notify "starting service..."
-	if ! "$RESTART_WITH_BUILD"; then
-		compose up -d 2>/dev/null
-	else
-		compose_log notify "start build..."
-		compose up -d --build 2>/dev/null
-		compose_log notify "finish build"
+
+	if [ -n "${CUSTOM_UP_COMMAND}" ]; then
+            eval "$CUSTOM_UP_COMMAND"
+        else
+			if ! "$RESTART_WITH_BUILD"; then
+				compose up -d 2>/dev/null
+			else
+				compose_log notify "start build..."
+				compose up -d --build 2>/dev/null
+				compose_log notify "finish build"
+			fi
 	fi
 	compose_log notify "service is up!"
 }
@@ -448,7 +463,12 @@ function project_update() {
 	# todo: running check
 
 	compose_log echo "restart service..."
-	service_down
+
+	if ! "$SERVICE_UP_ONLY"; then
+		compose_log echo "restart service..."
+		service_down
+	fi
+
 	service_up
 
 	# after script
@@ -502,7 +522,7 @@ function foreach_project() {
 
 			(
 				cd "$proj" || {
-					compose_log echo "[$proj] error: project not fouund"
+					compose_log echo "[$proj] error: project not found"
 					exit 1
 				}
 				eval "$1 $proj"
