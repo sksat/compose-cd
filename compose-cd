@@ -274,10 +274,12 @@ function update_repo() {
 	fi
 
 	compose_log echo "pull start"
+	local local_commit_url
 	local local_commit_link
 	local remote_commit_link
-	local_commit_link="[$local_commit]($(git remote get-url "${git_remote}")/commit/${local_commit})"
-	remote_commit_link="[$remote_commit]($(git remote get-url "${git_remote}")/commit/${remote_commit})"
+	local_commit_url=$(git remote get-url "${git_remote}" | sed 's/\.git$//')
+	local_commit_link="[$local_commit](${local_commit_url}/commit/${local_commit})"
+	remote_commit_link="[$remote_commit](${local_commit_url}/commit/${remote_commit})"
 	compose_log notify "local(${local_commit_link}) -> remote(${remote_commit_link})"
 
 	git pull "${git_remote}" "$branch"
